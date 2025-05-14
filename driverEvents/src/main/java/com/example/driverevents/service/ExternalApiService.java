@@ -12,12 +12,13 @@ public class ExternalApiService {
 
     public void sendBookingToApi(Booking booking) {
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-
-        HttpEntity<Booking> request = new HttpEntity<>(booking, headers);
-
-        restTemplate.exchange(API_URL, HttpMethod.PUT, request, Void.class);
+//        HttpHeaders headers = new HttpHeaders();
+//        headers.setContentType(MediaType.APPLICATION_JSON);
+//
+//        HttpEntity<Booking> request = new HttpEntity<>(booking, headers);
+//
+//        restTemplate.exchange(API_URL, HttpMethod.PUT, request, Void.class);
+        System.out.println(booking.toString());
     }
 
     public void updateDriverOrVehicle(String bookingNumber, Booking updatedBooking) {

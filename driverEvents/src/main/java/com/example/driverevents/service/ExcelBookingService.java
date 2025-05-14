@@ -18,6 +18,9 @@ import java.util.*;
 @RequiredArgsConstructor
 public class ExcelBookingService {
 
+//    String filePath = "C:\\Users\\yavor\\Desktop\\uploadTest.xlsx";
+
+
     private final DriverRepository driverRepository;
     private final VehicleRepository vehicleRepository;
 
@@ -39,8 +42,8 @@ public class ExcelBookingService {
 
                 Booking booking = new Booking();
                 booking.setBookingNumber(getCellValue(row.getCell(0)));
-                booking.setDriver(getCellValue(row.getCell(1)));
-                booking.setVehicle(getCellValue(row.getCell(2)));
+//                booking.setDriver(getCellValue(row.getCell(1)));
+//                booking.setVehicle(getCellValue(row.getCell(2)));
                 booking.setStartTime(LocalDateTime.parse(getCellValue(row.getCell(3)), formatter));
                 booking.setDestination(getCellValue(row.getCell(4)));
                 booking.setStartLocation(getCellValue(row.getCell(5)));
