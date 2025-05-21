@@ -4,21 +4,20 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
-import java.time.LocalDateTime;
+
+import java.util.List;
 
 @Entity
 @Table(name = "drivers")
 @Data
 public class Driver {
 
-    @NotBlank
-    private String name;
-
-    @NotBlank
     @Id
-    @Column(unique = true)
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @NotBlank
+    private String name;
 
     @Email
     @NotBlank
@@ -27,13 +26,26 @@ public class Driver {
     @NotBlank
     private String phoneNumber;
 
+    @OneToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "vehicle_id")
+    private Vehicle vehicles;
+
     @Enumerated(EnumType.STRING)
     private ContactMethod preferredContactMethod = ContactMethod.VOICE;
+
+    @Enumerated(EnumType.STRING)
+    private DriverStatus status = DriverStatus.AVAILABLE;
 
     public enum ContactMethod {
         VOICE,
         SMS,
         WHATSAPP
+    }
+
+    public enum DriverStatus {
+        AVAILABLE,
+        BUSY,
+        UNAVAILABLE
     }
 
 }

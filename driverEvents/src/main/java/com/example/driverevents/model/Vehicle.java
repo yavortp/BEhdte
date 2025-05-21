@@ -13,22 +13,37 @@ import java.time.LocalDateTime;
 public class Vehicle {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
     @NotBlank
     @Column(unique = true)
-    private String id;
-
-    @NotBlank
     private String registrationNumber;
-
-    @NotBlank
-    private String brand;
 
     @NotBlank
     private String model;
 
     @NotBlank
+    private String brand;
+
+    @NotBlank
     private String color;
+
+    @Positive
+    private Integer capacity;
 
     private String description;
 
+    @OneToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "driver_id")
+    private Driver driver;
+
+    @Enumerated(EnumType.STRING)
+    private VehicleStatus status = VehicleStatus.AVAILABLE;
+
+    public enum VehicleStatus {
+        AVAILABLE,
+        IN_USE,
+        MAINTENANCE,
+    }
 }
