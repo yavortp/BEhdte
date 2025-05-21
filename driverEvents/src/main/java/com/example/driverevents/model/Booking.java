@@ -12,17 +12,17 @@ import jakarta.validation.constraints.NotNull;
 public class Booking {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+
     @NotBlank
     @Column(unique = true)
     private String bookingNumber;
 
-    @ManyToOne
-    @NotNull
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "driver_id")
     private Driver driver;
-
-    @ManyToOne
-    @NotNull
-    private Vehicle vehicle;
 
     @NotNull
     private LocalDateTime startTime;
@@ -34,12 +34,30 @@ public class Booking {
     private String destination;
 
     @NotNull
-    private String arrivalOrDeparture;          // "arrival" or "departure"
+    private String arrivalOrDeparture;          // arrival or departure
 
     private String notes;
 
     @NotBlank
     private String PRVorShuttle;                // private or shuttle
 
-    private boolean apiSynced = false;
+    private boolean syncedWithApi;
+
+    @Column(nullable = false)
+    private LocalDateTime createdAt;
+
+    private LocalDateTime updatedAt;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
+
+
 }

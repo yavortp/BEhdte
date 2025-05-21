@@ -2,7 +2,7 @@ spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/bookingdb
     username: postgres
-    password: postgres
+    password: 4akaiMalko
   jpa:
     hibernate:
       ddl-auto: update
@@ -23,3 +23,9 @@ api:
   external:
     base-url: https://api.example.com/v1
     timeout: 5000
+
+excel:
+  test-data:
+    bookings: src/main/resources/test-data/bookings.xlsx
+    drivers: src/main/resources/test-data/drivers.xlsx
+    vehicles: src/main/resources/test-data/vehicles.xlsx
