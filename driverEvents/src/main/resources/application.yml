@@ -28,4 +28,5 @@ excel:
   test-data:
     bookings: src/main/resources/test-data/bookings.xlsx
     drivers: src/main/resources/test-data/drivers.xlsx
+    destinations: src/main/resources/test-data/destinations.xlsx
     vehicles: src/main/resources/test-data/vehicles.xlsx

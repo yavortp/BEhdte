@@ -36,7 +36,7 @@ public class FileProcessingService {
 
                 // Assuming columns are in order: bookingNumber, startTime, startLocation, destination
                 booking.setBookingNumber(getCellValueAsString(row.getCell(11)));
-                booking.setStartTime(getCellValueAsDateTime(row.getCell(9)));
+//                booking.setStartTime(getCellValueAsDateTime(row.getCell(9)));
                 booking.setStartLocation(getCellValueAsString(row.getCell(6)));
                 booking.setDestination(getCellValueAsString(row.getCell(7)));
 //                booking.setDriver(getCellValueAsString(row.getCell(8)));
