@@ -1,9 +1,11 @@
 package com.example.driverevents.service;
 
 import com.example.driverevents.model.Booking;
+import com.example.driverevents.model.Destination;
 import com.example.driverevents.model.Driver;
 import com.example.driverevents.model.Vehicle;
 import com.example.driverevents.repository.BookingRepository;
+import com.example.driverevents.repository.DestinationsRepository;
 import com.example.driverevents.repository.DriverRepository;
 import com.example.driverevents.repository.VehicleRepository;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.FileInputStream;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
@@ -28,6 +31,7 @@ public class TestDataLoader implements CommandLineRunner {
     private final BookingRepository bookingRepository;
     private final DriverRepository driverRepository;
     private final VehicleRepository vehicleRepository;
+    private final DestinationsRepository destinationsRepository;
 
     @Value("${excel.test-data.bookings}")
     private String bookingsFile;
@@ -38,14 +42,18 @@ public class TestDataLoader implements CommandLineRunner {
     @Value("${excel.test-data.vehicles}")
     private String vehiclesFile;
 
+    @Value("${excel.test-data.destinations}")
+    private String destinationsFile;
+
     @Override
     @Transactional
     public void run(String... args) throws Exception {
         clearExistingData();
 
         try {
-            loadVehicles();
+//            loadVehicles();
             loadDrivers();
+            loadDestinations();
             loadBookings();
 
         } catch (Exception e) {
@@ -57,11 +65,40 @@ public class TestDataLoader implements CommandLineRunner {
     @Transactional
     public void clearExistingData() {
         try {
-            bookingRepository.deleteAll();
-            vehicleRepository.deleteAll();
             driverRepository.deleteAll();
+            vehicleRepository.deleteAll();
+            bookingRepository.deleteAll();
         } catch (Exception e) {
             System.err.println("Error clearing existing data: " + e.getMessage());
+        }
+    }
+
+    @Transactional
+    public void loadDestinations() {
+        try (FileInputStream fis = new FileInputStream(destinationsFile);
+            Workbook workbook = new XSSFWorkbook(fis)) {
+
+            Sheet sheet = workbook.getSheetAt(0);
+            List<Destination> destinations = new ArrayList<>();
+
+            for (Row row : sheet) {
+                if (row.getRowNum() == 0) continue;
+
+                try {
+                    Destination destination = new Destination();
+                    destination.setStartLocation(getStringValue(row.getCell(0)));
+                    destination.setEndLocation(getStringValue(row.getCell(1)));
+                    destination.setDurationMinutes((int) row.getCell(2).getNumericCellValue());
+
+                    destinations.add(destination);
+                } catch (Exception e) {
+                    System.err.println("Error loading destination " + row.getRowNum() + ": " + e.getMessage());
+                }
+            }
+            destinationsRepository.saveAll(destinations);
+        } catch (Exception e) {
+            System.err.println("Error loading destinations: " + e.getMessage());
+            throw new RuntimeException("Failed to load destinations", e);
         }
     }
 
@@ -85,13 +122,6 @@ public class TestDataLoader implements CommandLineRunner {
                     vehicle.setCapacity((int) row.getCell(4).getNumericCellValue());
                     vehicle.setStatus(Vehicle.VehicleStatus.valueOf(getStringValue(row.getCell(5))));
                     vehicle.setDescription(getStringValue(row.getCell(7)));
-
-                    // Assign to driver if driver ID is provided
-//                    Cell driverIdCell = row.getCell(6);
-//                    if (driverIdCell != null) {
-//                        Long driverId = (long) driverIdCell.getNumericCellValue();
-//                        driverRepository.findById(driverId).ifPresent(vehicle::setDriver);
-//                    }
 
                     vehicles.add(vehicle);
                 } catch (Exception e) {
@@ -128,7 +158,8 @@ public class TestDataLoader implements CommandLineRunner {
                     // Assign vehicle if vehicle number is provided
                     String vehicleNumber = getStringValue(row.getCell(5));
                     if (vehicleNumber != null && !vehicleNumber.isEmpty()) {
-                        vehicleRepository.findByRegistrationNumber(vehicleNumber).ifPresent(driver::setVehicles);
+                        vehicleRepository.findByRegistrationNumber(vehicleNumber);
+                        driver.setVehicles(vehicleRepository.findByRegistrationNumber(vehicleNumber));
                     }
 
                     drivers.add(driver);
@@ -155,35 +186,32 @@ public class TestDataLoader implements CommandLineRunner {
             for (Row row : sheet) {
                 if (row.getRowNum() == 0) continue; // Skip header
 
-                try {
-                    Booking booking = new Booking();
-                    booking.setBookingNumber(getStringValue(row.getCell(11)));
-                    booking.setStartTime(getDateValue(row.getCell(9)));
-                    booking.setStartLocation(getStringValue(row.getCell(6)));
-                    booking.setDestination(getStringValue(row.getCell(7)));
-                    booking.setNotes(getStringValue(row.getCell(13)));
-                    booking.setPRVorShuttle(getStringValue(row.getCell(2)));
-                    booking.setArrivalOrDeparture(getStringValue(row.getCell(5)));
+                Cell valueCheck = row.getCell(11);
+                if (valueCheck.getCellType() != CellType.BLANK || valueCheck.getCellType() != CellType.STRING && !valueCheck.getStringCellValue().trim().isEmpty()) {
 
-                    // Assign driver if driver ID is provided
-//                    Cell driverIdCell = row.getCell(8);
-//                    if (driverIdCell != null) {
-//                        Long driverId = (long) driverIdCell.getNumericCellValue();
-//                        driverRepository.findById(driverId).ifPresent(driver ->{
-//                            booking.setDriver(driver);
-//                            vehicleRepository.findByDriver(driver).ifPresent(booking::setVehicle);
-//                        });
-//                    }
+                    try {
+                        Booking booking = new Booking();
+                        booking.setBookingNumber(getStringValue(row.getCell(11)));
+                        booking.setStartTime(getDateValue(row.getCell(9)));
+                        booking.setStartLocation(getStringValue(row.getCell(6)));
+                        booking.setDestination(getStringValue(row.getCell(7)));
+                        booking.setNotes(getStringValue(row.getCell(13)));
+                        booking.setPRVorShuttle(getStringValue(row.getCell(2)));
+                        booking.setArrivalOrDeparture(getStringValue(row.getCell(5)));
+                        booking.setBookingDate(getStringValue(row.getCell(14)));
 
-                    // Assign driver if driver name is provided
-                    String driverName = getStringValue(row.getCell(8));
-                    if (driverName != null && !driverName.isEmpty()) {
-                        driverRepository.findByName(driverName).ifPresent(booking::setDriver);
+                        Driver driver = new Driver();
+                        Cell driverIdCell = row.getCell(8);
+                        String driverName = driverIdCell.getStringCellValue();
+                        driver = driverRepository.findByName(driverName);
+                        booking.setDriverName(driver.getName());
+
+                        bookings.add(booking);
+                    } catch (Exception e) {
+                        System.err.println("Error processing booking row " + row.getRowNum() + ": " + e.getMessage());
                     }
-
-                    bookings.add(booking);
-                } catch (Exception e) {
-                    System.err.println("Error processing booking row " + row.getRowNum() + ": " + e.getMessage());
+                } else {
+                    break;
                 }
             }
 
@@ -218,7 +246,7 @@ public class TestDataLoader implements CommandLineRunner {
         }
     }
 
-    private LocalDateTime getDateValue(Cell cell) {
+    private LocalTime getDateValue(Cell cell) {
         if (cell == null) return null;
 
         try {
@@ -226,7 +254,7 @@ public class TestDataLoader implements CommandLineRunner {
                 return cell.getDateCellValue()
                         .toInstant()
                         .atZone(ZoneId.systemDefault())
-                        .toLocalDateTime();
+                        .toLocalTime();
             }
         } catch (Exception e) {
             System.err.println("Error getting date value from cell: " + e.getMessage());

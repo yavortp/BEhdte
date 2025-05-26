@@ -12,7 +12,7 @@ import java.util.Optional;
 public interface VehicleRepository extends JpaRepository<Vehicle, Long> {
     List<Vehicle> findByStatus(Vehicle.VehicleStatus status);
     Optional<Vehicle> findByDriver(Driver driver);
-    Optional<Vehicle> findByRegistrationNumber(String number);
+    Vehicle findByRegistrationNumber(String number);
 }
 
 
