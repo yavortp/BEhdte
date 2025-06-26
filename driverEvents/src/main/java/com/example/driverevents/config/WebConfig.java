@@ -1,4 +1,4 @@
-package com.example.driverevents;
+package com.example.driverevents.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

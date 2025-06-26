@@ -15,8 +15,10 @@ public class LocationUpdate {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "booking_number")
+    @JoinColumn(name = "booking_id")
     private Booking booking;
+
+    private String bookingNumber;
 
     @NotNull
     private Double latitude;
@@ -27,5 +29,13 @@ public class LocationUpdate {
     @NotNull
     private LocalDateTime timestamp;
 
-//    private boolean sentToApi;
+    private boolean sentToExternalApi;
+
+    private String vehicleRegNumber;
+
+    @ManyToOne
+    @JoinColumn(name = "vehicle_id")
+    @NotNull
+    private Vehicle vehicle;
+
 }

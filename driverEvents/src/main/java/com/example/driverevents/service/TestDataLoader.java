@@ -52,8 +52,8 @@ public class TestDataLoader implements CommandLineRunner {
 
         try {
 //            loadVehicles();
-            loadDrivers();
-            loadDestinations();
+//            loadDrivers();
+//            loadDestinations();
             loadBookings();
 
         } catch (Exception e) {
