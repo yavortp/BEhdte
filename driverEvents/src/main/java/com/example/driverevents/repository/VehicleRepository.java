@@ -13,6 +13,9 @@ public interface VehicleRepository extends JpaRepository<Vehicle, Long> {
     List<Vehicle> findByStatus(Vehicle.VehicleStatus status);
     Optional<Vehicle> findByDriver(Driver driver);
     Vehicle findByRegistrationNumber(String number);
+
+    boolean existsByRegistrationNumber(String registrationNumber);
+
 }
 
 

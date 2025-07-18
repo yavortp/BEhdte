@@ -1,5 +1,6 @@
 package com.example.driverevents.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -23,11 +24,12 @@ public class Driver {
     @NotBlank
     private String email;
 
+    @JsonProperty("phone")
     @NotBlank
     private String phoneNumber;
 
     @OneToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "vehicle_id")
+    @JoinColumn(name = "vehicle_id", nullable = true)
     private Vehicle vehicles;
 
     @Enumerated(EnumType.STRING)

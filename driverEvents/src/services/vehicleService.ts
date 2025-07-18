@@ -1,114 +1,91 @@
-// Types
+
 export interface Vehicle {
     id: string;
-    number: string;
+    registrationNumber: string;
+    brand: string;
     model: string;
-    type: string;
+    color: string;
+    description: string;
     capacity: number;
-    status: 'available' | 'in-use' | 'maintenance';
-    lastMaintenance: string;
+    status: 'available' | 'in-use' ;
     createdAt: string;
     updatedAt: string;
 }
 
-// Mock data - would be replaced with actual API calls
-const mockVehicles: Vehicle[] = [
-    {
-        id: '1',
-        number: 'VH-001',
-        model: 'Toyota Camry',
-        type: 'sedan',
-        capacity: 4,
-        status: 'available',
-        lastMaintenance: new Date(Date.now() - 86400000 * 30).toISOString(),
-        createdAt: new Date(Date.now() - 86400000 * 365).toISOString(),
-        updatedAt: new Date().toISOString(),
-    },
-    {
-        id: '2',
-        number: 'VH-002',
-        model: 'Honda Accord',
-        type: 'sedan',
-        capacity: 4,
-        status: 'in-use',
-        lastMaintenance: new Date(Date.now() - 86400000 * 15).toISOString(),
-        createdAt: new Date(Date.now() - 86400000 * 300).toISOString(),
-        updatedAt: new Date().toISOString(),
-    },
-    {
-        id: '3',
-        number: 'VH-003',
-        model: 'Ford Explorer',
-        type: 'suv',
-        capacity: 7,
-        status: 'available',
-        lastMaintenance: new Date(Date.now() - 86400000 * 7).toISOString(),
-        createdAt: new Date(Date.now() - 86400000 * 240).toISOString(),
-        updatedAt: new Date().toISOString(),
-    },
-    {
-        id: '4',
-        number: 'VH-004',
-        model: 'Mercedes Sprinter',
-        type: 'van',
-        capacity: 12,
-        status: 'maintenance',
-        lastMaintenance: new Date().toISOString(),
-        createdAt: new Date(Date.now() - 86400000 * 180).toISOString(),
-        updatedAt: new Date().toISOString(),
-    }
-];
 
-// Service functions - in a real app, these would make actual API calls
-export const getVehicles = async (): Promise<Vehicle[]> => {
-    // Simulate API call
-    return new Promise((resolve) => {
-        setTimeout(() => {
-            resolve(mockVehicles);
-        }, 300);
+// Service functions - API calls
+
+export const createVehicle = async (vehicle: {
+    registrationNumber: string;
+    brand: string;
+    model: string;
+    color: string;
+    description: string;
+    capacity: number;
+    status: 'available' | 'in-use' ;
+}): Promise<Vehicle> => {
+    const response = await fetch("http://localhost:8080/api/vehicles", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(vehicle),
     });
+    if (!response.ok) throw new Error("Failed to create vehicle");
+    return await response.json();
+};
+
+export const getVehicles = async (): Promise<Vehicle[]> => {
+    const response = await fetch("http://localhost:8080/api/vehicles");
+    if (!response.ok) throw new Error("Failed to fetch vehicles");
+    const data = await response.json();
+
+    // Map registrationNumber → number
+    return data.map((vehicle: any) => ({
+        ...vehicle,
+        registrationNumber: vehicle.registrationNumber
+    }));
 };
 
 export const getVehicleById = async (id: string): Promise<Vehicle> => {
-    // Simulate API call
-    return new Promise((resolve, reject) => {
-        setTimeout(() => {
-            const vehicle = mockVehicles.find((v) => v.id === id);
-            if (vehicle) {
-                resolve(vehicle);
-            } else {
-                reject(new Error('Vehicle not found'));
-            }
-        }, 200);
-    });
+    const response = await fetch(`http://localhost:8080/api/vehicles/${id}`);
+    if (!response.ok) throw new Error("Vehicle not found");
+    return await response.json();
+
 };
 
 export const getAvailableVehicles = async (): Promise<Vehicle[]> => {
-    // Simulate API call
-    return new Promise((resolve) => {
-        setTimeout(() => {
-            const availableVehicles = mockVehicles.filter((v) => v.status === 'available');
-            resolve(availableVehicles);
-        }, 300);
-    });
+    const response = await fetch("http://localhost:8080/api/vehicles/available");
+    if (!response.ok) {
+        throw new Error("Failed to fetch available vehicles");
+    }
+    return await response.json();
+
 };
 
-export const updateVehicleStatus = async (id: string, status: 'available' | 'in-use' | 'maintenance'): Promise<Vehicle> => {
-    // Simulate API call
-    return new Promise((resolve, reject) => {
-        setTimeout(() => {
-            const index = mockVehicles.findIndex((v) => v.id === id);
-            if (index !== -1) {
-                mockVehicles[index] = {
-                    ...mockVehicles[index],
-                    status,
-                    updatedAt: new Date().toISOString(),
-                    ...(status === 'maintenance' ? { lastMaintenance: new Date().toISOString() } : {})
-                };
-                resolve(mockVehicles[index]);
-            } else {
-                reject(new Error('Vehicle not found'));
-            }
-        }, 300);
+export const updateVehicle = async (id: string, vehicle: Partial<Vehicle>): Promise<Vehicle> => {
+    const response = await fetch(`http://localhost:8080/api/vehicles/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(vehicle),
     });
+    if (!response.ok) throw new Error('Failed to update vehicle');
+    return await response.json();
+};
+
+
+export const updateVehicleStatus = async (id: string, status: "available" | "in-use"): Promise<Vehicle> => {
+    const response = await fetch(`http://localhost:8080/api/vehicles/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+    });
+    if (!response.ok) throw new Error("Failed to update vehicle");
+    return await response.json();
+
+};
+
+export const deleteVehicle = async (id: string): Promise<void> => {
+    const response = await fetch(`http://localhost:8080/api/vehicles/${id}`, {
+        method: "DELETE",
+    });
+    if (!response.ok) throw new Error("Failed to delete vehicle");
 };

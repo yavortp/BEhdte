@@ -1,108 +1,71 @@
-// Types
+
 export interface Driver {
     id: string;
     name: string;
     email: string;
     phone: string;
-    licenseNumber: string;
     status: 'available' | 'busy' | 'unavailable';
-    createdAt: string;
-    updatedAt: string;
+    preferredContactMethod: 'VOICE' | 'SMS' | 'WHATSAPP';
+    vehicleId?: string;
+    vehicles?: {
+        id: string;
+        registrationNumber: string;
+        model: string;
+    };
 }
 
-// Mock data - would be replaced with actual API calls
-const mockDrivers: Driver[] = [
-    {
-        id: '1',
-        name: 'John Doe',
-        email: 'john.doe@example.com',
-        phone: '+1234567890',
-        licenseNumber: 'DL-123456',
-        status: 'available',
-        createdAt: new Date(Date.now() - 86400000).toISOString(),
-        updatedAt: new Date().toISOString(),
-    },
-    {
-        id: '2',
-        name: 'Jane Smith',
-        email: 'jane.smith@example.com',
-        phone: '+1987654321',
-        licenseNumber: 'DL-654321',
-        status: 'busy',
-        createdAt: new Date(Date.now() - 86400000 * 7).toISOString(),
-        updatedAt: new Date().toISOString(),
-    },
-    {
-        id: '3',
-        name: 'Michael Johnson',
-        email: 'michael.johnson@example.com',
-        phone: '+1122334455',
-        licenseNumber: 'DL-112233',
-        status: 'available',
-        createdAt: new Date(Date.now() - 86400000 * 14).toISOString(),
-        updatedAt: new Date().toISOString(),
-    },
-    {
-        id: '4',
-        name: 'Sarah Williams',
-        email: 'sarah.williams@example.com',
-        phone: '+1555667788',
-        licenseNumber: 'DL-556677',
-        status: 'unavailable',
-        createdAt: new Date(Date.now() - 86400000 * 21).toISOString(),
-        updatedAt: new Date().toISOString(),
-    }
-];
+export type DriverUpdatePayload = {
+    name: string;
+    email: string;
+    phone: string;
+    status: 'available' | 'busy' | 'unavailable';
+    preferredContactMethod: 'VOICE' | 'SMS' | 'WHATSAPP';
+    vehicles?: { id: string };
+};
 
-// Service functions - in a real app, these would make actual API calls
+// Service functions -  API calls
+
+export const createDriver = async (data: Driver): Promise<Driver> => {
+    const response = await fetch('http://localhost:8080/api/drivers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+
+    if (!response.ok) throw new Error('Failed to create driver');
+    return await response.json();
+};
+
 export const getDrivers = async (): Promise<Driver[]> => {
-    // Simulate API call
-    return new Promise((resolve) => {
-        setTimeout(() => {
-            resolve(mockDrivers);
-        }, 300);
-    });
+    const response = await fetch("http://localhost:8080/api/drivers");
+    if (!response.ok) throw new Error("Failed to fetch drivers");
+    const data = await response.json();
+
+    return data as Driver[];
 };
 
-export const getDriverById = async (id: string): Promise<Driver> => {
-    // Simulate API call
-    return new Promise((resolve, reject) => {
-        setTimeout(() => {
-            const driver = mockDrivers.find((d) => d.id === id);
-            if (driver) {
-                resolve(driver);
-            } else {
-                reject(new Error('Driver not found'));
-            }
-        }, 200);
+// export const getDriverById = async (id: string): Promise<Driver> => {
+//
+// };
+//
+// export const getAvailableDrivers = async (): Promise<Driver[]> => {
+//
+// };
+
+export const updateDriver = async (id: string, payload: DriverUpdatePayload): Promise<Driver> => {
+    const response = await fetch(`http://localhost:8080/api/drivers/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
     });
+
+    if (!response.ok) throw new Error('Failed to update driver');
+    return await response.json();
 };
 
-export const getAvailableDrivers = async (): Promise<Driver[]> => {
-    // Simulate API call
-    return new Promise((resolve) => {
-        setTimeout(() => {
-            const availableDrivers = mockDrivers.filter((d) => d.status === 'available');
-            resolve(availableDrivers);
-        }, 300);
+export const deleteDriver = async (id: string): Promise<void> => {
+    const response = await fetch(`http://localhost:8080/api/drivers/${id}`, {
+        method: 'DELETE',
     });
-};
-
-export const updateDriverStatus = async (id: string, status: 'available' | 'busy' | 'unavailable'): Promise<Driver> => {
-    // Simulate API call
-    return new Promise((resolve, reject) => {
-        setTimeout(() => {
-            const index = mockDrivers.findIndex((d) => d.id === id);
-            if (index !== -1) {
-                mockDrivers[index] = {
-                    ...mockDrivers[index],
-                    status,
-                    updatedAt: new Date().toISOString(),
-                };
-                resolve(mockDrivers[index]);
-            } else {
-                reject(new Error('Driver not found'));
-            }
-        }, 300);
-    });
+    if (!response.ok) throw new Error('Failed to delete driver');
 };

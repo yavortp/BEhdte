@@ -33,7 +33,7 @@ public class Booking {
     private String bookingDate;
 
     @NotNull
-    private LocalTime startTime;
+    private LocalDateTime startTime;
 
     @NotBlank
     private String startLocation;

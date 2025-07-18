@@ -26,20 +26,37 @@ public class VehicleController {
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
 
-    @GetMapping
-    public ResponseEntity<List<Vehicle>> getAllVehicles() {
-        return ResponseEntity.ok(vehicleRepository.findAll());
+    @GetMapping()
+    @CrossOrigin(origins = "http://localhost:5173")
+    public List<Vehicle> getAllVehicles() {
+        return vehicleRepository.findAll();
     }
 
-    @PutMapping
+//    @GetMapping
+//    public ResponseEntity<List<Vehicle>> getAllVehicles() {
+//        return ResponseEntity.ok(vehicleRepository.findAll());
+//    }
+
+    @GetMapping("/available")
+    public List<Vehicle> getAvailableVehicles() {
+        return vehicleRepository.findByStatus(Vehicle.VehicleStatus.AVAILABLE);
+    }
+
+
+    @PutMapping("/{id}")
     public ResponseEntity<?> updateVehicle(@PathVariable Long id, @RequestBody Vehicle updatedVehicle) {
         return vehicleRepository.findById(id).map(vehicle -> {
             vehicle.setRegistrationNumber(updatedVehicle.getRegistrationNumber());
+            vehicle.setModel(updatedVehicle.getModel());
+            vehicle.setBrand(updatedVehicle.getBrand());
+            vehicle.setColor(updatedVehicle.getColor());
+            vehicle.setCapacity(updatedVehicle.getCapacity());
+            vehicle.setStatus(updatedVehicle.getStatus());
             return ResponseEntity.ok(vehicleRepository.save(vehicle));
         }).orElse(ResponseEntity.notFound().build());
     }
 
-    @DeleteMapping
+    @DeleteMapping("{id}")
     public ResponseEntity<?> deleteVehicle(@PathVariable Long id) {
         if (!vehicleRepository.existsById(id)) {
             return ResponseEntity.notFound().build();

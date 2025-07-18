@@ -9,9 +9,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -25,23 +23,36 @@ public class FileProcessingService {
             Sheet sheet = workbook.getSheetAt(0);
             Iterator<Row> rows = sheet.iterator();
 
+            Map<String, Integer> columnIndexMap = new HashMap<>();
+
+            // Read header
+            Row headerRow = rows.next();
+            for (Cell cell : headerRow) {
+                String header = cell.getStringCellValue().trim().toLowerCase();         // Normalize key
+                columnIndexMap.put(header, cell.getColumnIndex());
+            }
+
             // Skip header row
             if (rows.hasNext()) {
                 rows.next();
             }
 
             while (rows.hasNext()) {
+
                 Row row = rows.next();
                 Booking booking = new Booking();
 
-                // Assuming columns are in order: bookingNumber, startTime, startLocation, destination
-                booking.setBookingNumber(getCellValueAsString(row.getCell(11)));
-//                booking.setStartTime(getCellValueAsDateTime(row.getCell(9)));
-                booking.setStartLocation(getCellValueAsString(row.getCell(6)));
-                booking.setDestination(getCellValueAsString(row.getCell(7)));
-//                booking.setDriver(getCellValueAsString(row.getCell(8)));
-                booking.setArrivalOrDeparture(getCellValueAsString(row.getCell(5)));
-                booking.setPRVorShuttle(getCellValueAsString(row.getCell(2)));
+                if (booking.getBookingNumber() == null || booking.getStartLocation() == null) {
+                    continue; // skip invalid row
+                }
+                // column names are already set in the Map above
+                booking.setBookingNumber(getCellValueAsString(row.getCell(columnIndexMap.get("booking number"))));
+                booking.setStartTime(getCellValueAsDateTime(row.getCell(columnIndexMap.get("start time"))));
+                booking.setStartLocation(getCellValueAsString(row.getCell(columnIndexMap.get("start location"))));
+                booking.setDestination(getCellValueAsString(row.getCell(columnIndexMap.get("destination"))));
+//                booking.setDriver(getCellValueAsString(row.getCell(columnIndexMap.get("driver"))));
+                booking.setArrivalOrDeparture(getCellValueAsString(row.getCell(columnIndexMap.get("arrival or departure"))));
+                booking.setPRVorShuttle(getCellValueAsString(row.getCell(columnIndexMap.get("prvor shuttle"))));
 
                 booking.setSyncedWithApi(false);
 

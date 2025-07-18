@@ -8,6 +8,7 @@ import com.example.driverevents.repository.BookingRepository;
 import com.example.driverevents.repository.DestinationsRepository;
 import com.example.driverevents.repository.DriverRepository;
 import com.example.driverevents.repository.VehicleRepository;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -19,11 +20,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.FileInputStream;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
@@ -48,18 +47,37 @@ public class TestDataLoader implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) throws Exception {
-        clearExistingData();
+        if (driverRepository.count() == 0) {
+            driverRepository.deleteAll();
+            loadDrivers();
+        }
 
-        try {
+        if (vehicleRepository.count() == 0) {
+            vehicleRepository.deleteAll();
+            loadVehicles();
+        }
+
+        if (bookingRepository.count() == 0) {
+            bookingRepository.deleteAll();
+            loadBookings();
+        }
+
+//        if (destinationsRepository.count() == 0) {
+//            destinationsRepository.deleteAll();
+//            loadDestinations();
+//        }
+//        clearExistingData();
+
+//        try {
 //            loadVehicles();
 //            loadDrivers();
 //            loadDestinations();
-            loadBookings();
-
-        } catch (Exception e) {
-            System.err.println("Error loading test data: " + e.getMessage());
-            e.printStackTrace();
-        }
+//            loadBookings();
+//
+//        } catch (Exception e) {
+//            System.err.println("Error loading test data: " + e.getMessage());
+//            e.printStackTrace();
+//        }
     }
 
     @Transactional
@@ -114,6 +132,13 @@ public class TestDataLoader implements CommandLineRunner {
                 if (row.getRowNum() == 0) continue; // Skip header
 
                 try {
+                    String regNumber = getStringValue(row.getCell(0));
+                    // Check for existing vehicle
+                    boolean exists = vehicleRepository.existsByRegistrationNumber(regNumber);
+                    if (exists) {
+                        System.out.println("Skipping duplicate vehicle: " + regNumber);
+                        continue;
+                    }
                     Vehicle vehicle = new Vehicle();
                     vehicle.setRegistrationNumber(getStringValue(row.getCell(0)));
                     vehicle.setModel(getStringValue(row.getCell(1)));
@@ -246,7 +271,7 @@ public class TestDataLoader implements CommandLineRunner {
         }
     }
 
-    private LocalTime getDateValue(Cell cell) {
+    private @NotNull LocalDateTime getDateValue(Cell cell) {
         if (cell == null) return null;
 
         try {
@@ -254,7 +279,7 @@ public class TestDataLoader implements CommandLineRunner {
                 return cell.getDateCellValue()
                         .toInstant()
                         .atZone(ZoneId.systemDefault())
-                        .toLocalTime();
+                        .toLocalDateTime();
             }
         } catch (Exception e) {
             System.err.println("Error getting date value from cell: " + e.getMessage());

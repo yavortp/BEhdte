@@ -362,7 +362,7 @@ const BookingDetails: React.FC = () => {
                                             <option value="">-- Select Vehicle --</option>
                                             {vehicles.map((vehicle) => (
                                                 <option key={vehicle.id} value={vehicle.id}>
-                                                    {vehicle.number} - {vehicle.model}
+                                                    {vehicle.registrationNumber} - {vehicle.model}
                                                 </option>
                                             ))}
                                         </select>
