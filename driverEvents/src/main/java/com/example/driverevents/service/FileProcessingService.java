@@ -1,6 +1,8 @@
 package com.example.driverevents.service;
 
 import com.example.driverevents.model.Booking;
+import com.example.driverevents.model.Driver;
+import com.example.driverevents.repository.DriverRepository;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -15,6 +17,7 @@ import java.util.*;
 @RequiredArgsConstructor
 public class FileProcessingService {
     private final BookingService bookingService;
+    private final DriverRepository driverRepository;
 
     public List<Booking> processExcelFile(MultipartFile file) throws IOException {
         List<Booking> bookings = new ArrayList<>();
@@ -28,7 +31,7 @@ public class FileProcessingService {
             // Read header
             Row headerRow = rows.next();
             for (Cell cell : headerRow) {
-                String header = cell.getStringCellValue().trim().toLowerCase();         // Normalize key
+                String header = cell.getStringCellValue().trim().toLowerCase();
                 columnIndexMap.put(header, cell.getColumnIndex());
             }
 
@@ -50,9 +53,18 @@ public class FileProcessingService {
                 booking.setStartTime(getCellValueAsDateTime(row.getCell(columnIndexMap.get("start time"))));
                 booking.setStartLocation(getCellValueAsString(row.getCell(columnIndexMap.get("start location"))));
                 booking.setDestination(getCellValueAsString(row.getCell(columnIndexMap.get("destination"))));
-//                booking.setDriver(getCellValueAsString(row.getCell(columnIndexMap.get("driver"))));
                 booking.setArrivalOrDeparture(getCellValueAsString(row.getCell(columnIndexMap.get("arrival or departure"))));
                 booking.setPRVorShuttle(getCellValueAsString(row.getCell(columnIndexMap.get("prvor shuttle"))));
+
+                String driverName = (getCellValueAsString(row.getCell(columnIndexMap.get("driver"))));
+                Driver matchedDriver = driverRepository.findByName(driverName);
+                if (matchedDriver != null) {
+                    booking.setDriver(matchedDriver);
+                    booking.setDriverName(matchedDriver.getName());
+                } else {
+                    booking.setDriver(null);
+                    booking.setDriverName(driverName);
+                }
 
                 booking.setSyncedWithApi(false);
 

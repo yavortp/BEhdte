@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
     Plus, Search, Filter, User, Phone, Mail,
-    CheckCircle, XCircle, AlertTriangle, Edit, Trash2, Save, X
+     Edit, Trash2, Save, X
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { useForm } from 'react-hook-form';
@@ -93,7 +93,7 @@ const Drivers: React.FC = () => {
         setFilteredDrivers(filtered);
     };
 
-    const handleStatusChange = async (driverId: string, newStatus: 'available' | 'busy' | 'unavailable') => {
+    const handleStatusChange = async (driverId: string, newStatus: "available" | "busy" | "unavailable") => {
         try {
             await updateDriver(driverId, { status: newStatus } );
             toast.success('Driver status updated successfully');
@@ -174,33 +174,33 @@ const Drivers: React.FC = () => {
         }
     };
 
-    const getStatusBadge = (status: string) => {
-        switch (status) {
-            case 'available':
-                return (
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-            <CheckCircle className="h-3 w-3 mr-1" />
-            Available
-          </span>
-                );
-            case 'busy':
-                return (
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-            <AlertTriangle className="h-3 w-3 mr-1" />
-            Busy
-          </span>
-                );
-            case 'unavailable':
-                return (
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-            <XCircle className="h-3 w-3 mr-1" />
-            Unavailable
-          </span>
-                );
-            default:
-                return null;
-        }
-    };
+    // const getStatusBadge = (status: string) => {
+    //     switch (status) {
+    //         case 'available':
+    //             return (
+    //                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+    //         <CheckCircle className="h-3 w-3 mr-1" />
+    //         Available
+    //       </span>
+    //             );
+    //         case 'busy':
+    //             return (
+    //                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+    //         <AlertTriangle className="h-3 w-3 mr-1" />
+    //         Busy
+    //       </span>
+    //             );
+    //         case 'unavailable':
+    //             return (
+    //                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+    //         <XCircle className="h-3 w-3 mr-1" />
+    //         Unavailable
+    //       </span>
+    //             );
+    //         default:
+    //             return null;
+    //     }
+    // };
 
     if (isLoading) {
         return (

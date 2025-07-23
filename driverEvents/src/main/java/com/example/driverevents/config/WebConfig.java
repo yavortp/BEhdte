@@ -16,21 +16,21 @@ public class WebConfig implements WebMvcConfigurer {
     @Value("${api.external.timeout}")
     private int timeout;
 
-    @Override
-    public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/**") // allow all paths
-                .allowedOrigins("http://localhost:5173") // your frontend origin
-                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-                .allowedHeaders("*")
-                .allowCredentials(true);
-    }
 
-//    @Bean
-//    public WebMvcConfigurer corsConfigurer() {
-//        return new WebMvcConfigurer() {
-//
-//        };
-//    }
+
+    @Bean
+    public WebMvcConfigurer corsConfigurer() {
+        return new WebMvcConfigurer() {
+            @Override
+            public void addCorsMappings(CorsRegistry registry) {
+                registry.addMapping("/**") // allow all paths
+                        .allowedOriginPatterns("*") // frontend origin
+                        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                        .allowedHeaders("*")
+                        .allowCredentials(false);
+            }
+        };
+    }
 
     @Bean
     public Jackson2ObjectMapperBuilderCustomizer customizeEnumDeserialization() {

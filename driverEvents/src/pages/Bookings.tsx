@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import {
     Plus, Search, Filter, Calendar, MapPin, User, Truck,
-    CheckCircle, XCircle, AlertTriangle, Edit, Trash2, Eye
+    CheckCircle, XCircle, AlertTriangle, Trash2, Eye
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { fetchBookings, deleteBooking, Booking } from '../services/bookingService';

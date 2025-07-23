@@ -1,8 +1,3 @@
-import axios from 'axios';
-import { toast } from 'react-toastify';
-
-// This would be replaced with your actual API base URL
-const API_BASE_URL = 'https://api.example.com/v1';
 
 // Types
 export interface Booking {
@@ -21,113 +16,42 @@ export interface Booking {
     updatedAt?: string;
 }
 
-// Mock data - would be replaced with actual API calls
-const mockBookings: Booking[] = [
-    {
-        id: '1',
-        bookingNumber: 'BK-001',
-        startTime: new Date().toISOString(),
-        destination: 'Airport',
-        driverId: '1',
-        driverName: 'John Doe',
-        vehicleId: '1',
-        vehicleNumber: 'VH-001',
-        vehicleModel: 'Toyota Camry',
-        syncedWithApi: true,
-        notes: 'VIP customer',
-        createdAt: new Date(Date.now() - 86400000).toISOString(),
-        updatedAt: new Date().toISOString(),
-    },
-    {
-        id: '2',
-        bookingNumber: 'BK-002',
-        startTime: new Date(Date.now() + 3600000).toISOString(),
-        destination: 'Downtown',
-        driverId: '2',
-        driverName: 'Jane Smith',
-        vehicleId: '2',
-        vehicleNumber: 'VH-002',
-        vehicleModel: 'Honda Accord',
-        syncedWithApi: false,
-        createdAt: new Date(Date.now() - 43200000).toISOString(),
-        updatedAt: new Date().toISOString(),
-    },
-    {
-        id: '3',
-        bookingNumber: 'BK-003',
-        startTime: new Date(Date.now() + 7200000).toISOString(),
-        destination: 'Conference Center',
-        driverId: null,
-        vehicleId: null,
-        syncedWithApi: false,
-        createdAt: new Date(Date.now() - 21600000).toISOString(),
-        updatedAt: new Date().toISOString(),
-    },
-];
-
-// Service functions - in a real app, these would make actual API calls
+// Service functions - API calls
 export const fetchBookings = async (): Promise<Booking[]> => {
-    // Simulate API call
-    return new Promise((resolve) => {
-        setTimeout(() => {
-            resolve(mockBookings);
-        }, 500);
-    });
+    const response = await fetch('http://localhost:8080/api/bookings');
+    if (!response.ok) throw new Error('Failed to fetch bookings');
+    return await response.json();
 };
 
 export const getBookingById = async (id: string): Promise<Booking> => {
-    // Simulate API call
-    return new Promise((resolve, reject) => {
-        setTimeout(() => {
-            const booking = mockBookings.find((b) => b.id === id);
-            if (booking) {
-                resolve(booking);
-            } else {
-                reject(new Error('Booking not found'));
-            }
-        }, 300);
-    });
+    const response = await fetch(`http://localhost:8080/api/bookings/${id}`);
+    if (!response.ok) throw new Error('Failed to fetch bookings');
+    return await response.json();
 };
 
 export const updateBooking = async (id: string, bookingData: Partial<Booking>): Promise<Booking> => {
-    // Simulate API call
-    return new Promise((resolve) => {
-        setTimeout(() => {
-            const index = mockBookings.findIndex((b) => b.id === id);
-            if (index !== -1) {
-                mockBookings[index] = {
-                    ...mockBookings[index],
-                    ...bookingData,
-                    updatedAt: new Date().toISOString(),
-                };
-                resolve(mockBookings[index]);
-            }
-        }, 500);
+    const response = await fetch(`http://localhost:8080/api/bookings/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bookingData),
     });
+    if (!response.ok) throw new Error('Failed to update booking');
+    return await response.json();
 };
 
 export const deleteBooking = async (id: string): Promise<void> => {
-    // Simulate API call
-    return new Promise((resolve) => {
-        setTimeout(() => {
-            const index = mockBookings.findIndex((b) => b.id === id);
-            if (index !== -1) {
-                mockBookings.splice(index, 1);
-            }
-            resolve();
-        }, 500);
+    const response = await fetch(`http://localhost:8080/api/bookings/${id}`, {
+        method: 'DELETE',
     });
+    if (!response.ok) throw new Error('Failed to delete booking');
 };
 
 export const assignDriverToBooking = async (bookingId: string, driverId: string): Promise<Booking> => {
-    // Simulate API call to get driver details (would come from driver service)
-    const driverName = driverId === '1' ? 'John Doe' : driverId === '2' ? 'Jane Smith' : 'Driver ' + driverId;
-
-    return updateBooking(bookingId, {
-        driverId,
-        driverName,
-        syncedWithApi: false, // Mark as needing sync after update
+    const response = await fetch(`http://localhost:8080/api/bookings/${bookingId}/assign-driver/${driverId}`, {
+        method: 'POST',
     });
+    if (!response.ok) throw new Error('Failed to assign driver');
+    return await response.json();
 };
 
 export const assignVehicleToBooking = async (bookingId: string, vehicleId: string): Promise<Booking> => {
@@ -143,61 +67,24 @@ export const assignVehicleToBooking = async (bookingId: string, vehicleId: strin
     });
 };
 
-export const syncBookingWithApi = async (bookingId: string): Promise<Booking> => {
-    // Get the booking
-    const booking = await getBookingById(bookingId);
+export const processBulkBookings = async (file: File): Promise<{ message: string; bookingsCreated: number }> => {
+    const formData = new FormData();
+    formData.append('file', file);
 
-    // Check if the booking has all required fields
-    if (!booking.driverId || !booking.vehicleId) {
-        throw new Error('Booking must have a driver and vehicle assigned before syncing');
-    }
-
-    // In a real app, this would make a PUT request to the external API
-    try {
-        // Simulate API call
-        // const response = await axios.put(`${API_BASE_URL}/bookings/${bookingId}`, booking);
-
-        // Update local booking to mark as synced
-        return updateBooking(bookingId, {
-            syncedWithApi: true,
-            updatedAt: new Date().toISOString(),
-        });
-    } catch (error) {
-        console.error('Error syncing booking with API:', error);
-        throw new Error('Failed to sync booking with external API');
-    }
-};
-
-export const processBulkBookings = async (bookings: any[]): Promise<{ successCount: number; failedCount: number }> => {
-    // Simulate API call to process multiple bookings
-    return new Promise((resolve) => {
-        setTimeout(() => {
-            // In a real app, this would send the data to the backend
-            // and handle validation, database insertion, etc.
-
-            // For demo purposes, we'll just generate some mock results
-            const successCount = Math.floor(bookings.length * 0.9); // 90% success rate
-            const failedCount = bookings.length - successCount;
-
-            // Add the bookings to our mock data
-            for (let i = 0; i < successCount; i++) {
-                const newBooking: Booking = {
-                    id: (mockBookings.length + i + 1).toString(),
-                    bookingNumber: `BK-${100 + mockBookings.length + i}`,
-                    startTime: bookings[i].startTime || new Date(Date.now() + 3600000 * (i + 1)).toISOString(),
-                    destination: bookings[i].destination || 'Unknown',
-                    driverId: bookings[i].driverId || null,
-                    driverName: bookings[i].driverId ? `Driver ${bookings[i].driverId}` : undefined,
-                    vehicleId: bookings[i].vehicleId || null,
-                    vehicleNumber: bookings[i].vehicleId ? `VH-${bookings[i].vehicleId}` : undefined,
-                    syncedWithApi: false,
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString(),
-                };
-                mockBookings.push(newBooking);
-            }
-
-            resolve({ successCount, failedCount });
-        }, 1500);
+    const response = await fetch('http://localhost:8080/api/bookings/upload', {
+        method: 'POST',
+        body: formData,
     });
+
+    if (!response.ok) throw new Error('Failed to process file');
+    return await response.json();
 };
+
+export const syncWithApi = async (bookingId: string): Promise<Booking> => {
+    const response = await fetch(`http://localhost:8080/api/bookings/${bookingId}/sync`, {
+        method: 'POST',
+    });
+    if (!response.ok) throw new Error('Failed to sync booking');
+    return await response.json();
+};
+

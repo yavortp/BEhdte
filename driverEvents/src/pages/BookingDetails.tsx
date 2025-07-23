@@ -11,9 +11,9 @@ import {
     getBookingById,
     updateBooking,
     deleteBooking,
-    assignDriverToBooking,
-    assignVehicleToBooking,
-    syncBookingWithApi,
+    // assignDriverToBooking,
+    // assignVehicleToBooking,
+    syncWithApi,
     Booking
 } from '../services/bookingService';
 import { getDrivers, Driver } from '../services/driverService';
@@ -57,7 +57,7 @@ const BookingDetails: React.FC = () => {
                 reset({
                     destination: bookingData.destination,
                     startTime: new Date(bookingData.startTime).toISOString().slice(0, 16),
-                    driverId: bookingData.driverId || '',
+                    driverId: bookingData.driverId || 'error',
                     vehicleId: bookingData.vehicleId || '',
                     notes: bookingData.notes || '',
                 });
@@ -100,6 +100,7 @@ const BookingDetails: React.FC = () => {
                 destination: data.destination,
                 startTime: new Date(data.startTime).toISOString(),
                 driverId: data.driverId || null,
+                driverName: data.driverName,
                 vehicleId: data.vehicleId || null,
                 notes: data.notes || '',
                 syncedWithApi: false, // Mark as needing sync after update
@@ -121,7 +122,7 @@ const BookingDetails: React.FC = () => {
 
         setIsSyncing(true);
         try {
-            const updatedBooking = await syncBookingWithApi(id);
+            const updatedBooking = await syncWithApi(id);
             setBooking(updatedBooking);
             toast.success('Booking synchronized with API');
         } catch (err) {
@@ -639,7 +640,7 @@ const BookingDetails: React.FC = () => {
                         </h3>
                     </div>
                     <div className="px-4 py-5 sm:p-6">
-                        <LocationMap driverEmail={booking.driverEmail} />
+                        <LocationMap driverEmail={booking.driverName} />
                     </div>
                 </div>
             )}

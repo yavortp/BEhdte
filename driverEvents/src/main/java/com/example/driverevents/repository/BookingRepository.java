@@ -1,6 +1,7 @@
 package com.example.driverevents.repository;
 
 import com.example.driverevents.model.Booking;
+import com.example.driverevents.model.Driver;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -15,7 +16,10 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     Optional<Booking> findByBookingNumber(String bookingNumber);
     List<Booking> findByStartTimeBetween(LocalDateTime start, LocalDateTime end);
     List<Booking> findBySyncedWithApi(boolean syncedWithApi);
-    List<Booking> id(long id);
+
+//    List<Booking> findById(Long id);
+
+
     @Query(value = "SELECT * FROM bookings b WHERE b.driver_id = :driverId " +
             "AND :timestamp BETWEEN b.start_time AND b.start_time + interval '30 minutes'",
             nativeQuery = true)
@@ -27,17 +31,5 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             "OR :now BETWEEN b.start_time - interval '30 minutes' AND b.start_time + interval '30 minutes'",
             nativeQuery = true)
     List<Booking> findBookingsForLocationUpdates(@Param("now") LocalDateTime now);
-
-
-
-//    @Query("SELECT b FROM Booking b WHERE b.driver.id = :driverId " +
-//            "AND :timestamp BETWEEN b.startTime AND b.startTime + INTERVAL (30 MINUTE)")
-//    Optional<Booking> findActiveBookingForDriver(Long driverId, LocalDateTime timestamp);
-//
-//    @Query("SELECT b FROM Booking b WHERE " +
-//            "b.startTime BETWEEN :now AND :now + INTERVAL (30 MINUTE)" +
-//            "OR :now BETWEEN b.startTime - INTERVAL (30 MINUTE) AND b.startTime + INTERVAL (30 MINUTE)")
-//    List<Booking> findBookingsForLocationUpdates(LocalDateTime now);
-
 
 }

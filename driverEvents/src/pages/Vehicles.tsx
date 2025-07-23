@@ -201,7 +201,7 @@ const Vehicles: React.FC = () => {
         }
     };
 
-    const getTypeIcon = (type: string) => {
+    const getTypeIcon = (_: string) => {
         // we can customize icons based on vehicle type
         return <Truck className="h-5 w-5 text-gray-600" />;
     };

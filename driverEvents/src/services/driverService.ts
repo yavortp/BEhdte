@@ -14,14 +14,14 @@ export interface Driver {
     };
 }
 
-export type DriverUpdatePayload = {
+export type DriverUpdatePayload = Partial<{
     name: string;
     email: string;
     phone: string;
     status: 'available' | 'busy' | 'unavailable';
     preferredContactMethod: 'VOICE' | 'SMS' | 'WHATSAPP';
-    vehicles?: { id: string };
-};
+    vehicles?: { id: string } | null;
+}>;
 
 // Service functions -  API calls
 

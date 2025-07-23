@@ -15,12 +15,13 @@ import org.springframework.stereotype.Service;
 import java.awt.print.Book;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 public class BookingService {
 
-    private BookingRepository bookingRepository;
+    private final BookingRepository bookingRepository;
 
     private final DriverRepository driverRepository;
 
@@ -57,9 +58,23 @@ public class BookingService {
         booking.setDestination(bookingDetails.getDestination());
         booking.setNotes(bookingDetails.getNotes());
         booking.setSyncedWithApi(false);
-        booking.setDriver(bookingDetails.getDriver());
         booking.setPRVorShuttle(bookingDetails.getPRVorShuttle());
         booking.setArrivalOrDeparture(bookingDetails.getArrivalOrDeparture());
+
+        String driverName = bookingDetails.getDriverName();
+        Driver driver = driverRepository.findByNameIgnoreCase(driverName.trim())
+                .orElseThrow(() -> new EntityNotFoundException("Driver with name '" + driverName + "' not found"));
+        booking.setDriver(driver);
+        booking.setDriverName(driver.getName());
+//        if (driverName != null && !driverName.isBlank()) {
+//        }
+
+//        Vehicle vehicle = bookingDetails.getVehicle();
+//        if (vehicle != null) {
+//            booking.setVehicle(vehicle);
+//            booking.setVehicleNumber(vehicle.getRegistrationNumber());
+//            booking.setVehicleModel(vehicle.getModel());
+
         return bookingRepository.save(booking);
     }
 
@@ -93,23 +108,30 @@ public class BookingService {
         return bookingRepository.save(booking);
     }
 
-//    @Transactional
-//    public Booking assignVehicle(Long bookingId, Long vehicleId) {
-//        Booking booking = getBookingById(bookingId);
-//        Vehicle vehicle = vehicleRepository.findById(vehicleId)
-//                .orElseThrow(() -> new EntityNotFoundException("Vehicle not found with id: " + vehicleId));
-//
-//        if (vehicle.getStatus() != Vehicle.VehicleStatus.AVAILABLE) {
-//            throw new IllegalStateException("Vehicle is not available");
-//        }
-//
-//        booking.setVehicle(vehicle);
-//        booking.setSyncedWithApi(false);
-//        vehicle.setStatus(Vehicle.VehicleStatus.IN_USE);
-//        vehicleRepository.save(vehicle);
-//
-//        return bookingRepository.save(booking);
-//    }
+    @Transactional
+    public Booking assignDriverByName(Long bookingId, String driverName) {
+        Booking booking = getBookingById(bookingId);
+
+        Driver driver = driverRepository.findByNameIgnoreCase(driverName.trim())
+                .orElseThrow(() -> new EntityNotFoundException("Driver with name '" + driverName + "' not found"));
+
+        if (driver.getVehicles() == null) {
+            throw new IllegalStateException("Driver has no vehicle assigned");
+        }
+
+        if (driver.getStatus() != Driver.DriverStatus.AVAILABLE) {
+            throw new IllegalStateException("Driver is not available for booking");
+        }
+
+        booking.setDriver(driver);
+        booking.setDriverName(driver.getName()); // for frontend display
+        booking.setSyncedWithApi(false);
+
+        driver.setStatus(Driver.DriverStatus.BUSY);
+        driverRepository.save(driver);
+
+        return bookingRepository.save(booking);
+    }
 
     @Transactional
     public Booking syncWithApi(Long bookingId) {
@@ -122,18 +144,6 @@ public class BookingService {
         if (booking.getDriver().getVehicles() == null) {
             throw new IllegalStateException("Driver must have a vehicle assigned before syncing booking");
         }
-
-//        if (booking.getVehicle().getStatus() != Vehicle.VehicleStatus.IN_USE) {
-//            throw new IllegalStateException("Vehicle must be IN_USE status to sync");
-//        }
-
-        // Check if driver has an available vehicle
-//        boolean hasAvailableVehicle = booking.getDriver().getVehicles().stream()
-//                .anyMatch(v -> v.getStatus() == Vehicle.VehicleStatus.AVAILABLE);
-
-//        if (!hasAvailableVehicle) {
-//            throw new IllegalStateException("Driver must have an available vehicle before syncing");
-//        }
 
         externalApiService.sendBookingToApi(booking);
         booking.setSyncedWithApi(true);
@@ -148,15 +158,4 @@ public class BookingService {
         return bookingRepository.findBySyncedWithApi(false);
     }
 
-//    public Booking saveBookingAndSync(Booking booking) {
-//        try {
-//            booking = bookingRepository.save(booking);
-//            externalApiService.sendBookingToApi(booking);
-//            booking.setApiSynced(true);
-//            return bookingRepository.save(booking);
-//        } catch (Exception e) {
-//            System.err.println("API sync failed: "+ e.getMessage());
-//            throw new RuntimeException("Booking saved but API sync failed.");
-//        }
-//    }
 }

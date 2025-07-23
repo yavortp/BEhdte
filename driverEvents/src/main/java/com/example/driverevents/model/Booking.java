@@ -25,10 +25,14 @@ public class Booking {
     private String bookingNumber;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "driver_id")
+    @JoinColumn(name = "driver_id", nullable = true)
     private Driver driver;
 
     private String driverName;
+
+    @ManyToOne
+    @JoinColumn(name = "vehicle_id", nullable = true)
+    private Vehicle vehicle;
 
     private String bookingDate;
 
@@ -77,5 +81,4 @@ public class Booking {
         AFTER_PICKUP,
         COMPLETED
     }
-
 }
