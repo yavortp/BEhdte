@@ -14,5 +14,14 @@ export default defineConfig({
         alias: {
             'buffer': 'buffer'
         }
-    }
+    },
+    server: {
+        proxy: {
+            '/api': {
+                target: 'http://localhost:8080',    //BE server
+                changeOrigin: true,
+                secure: false,
+            },
+        },
+    },
 });

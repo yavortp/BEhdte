@@ -28,7 +28,7 @@ public class Driver {
     @NotBlank
     private String phoneNumber;
 
-    @OneToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "vehicle_id", nullable = true)
     private Vehicle vehicles;
 

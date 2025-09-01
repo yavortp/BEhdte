@@ -217,7 +217,7 @@ public class TestDataLoader implements CommandLineRunner {
                     try {
                         Booking booking = new Booking();
                         booking.setBookingNumber(getStringValue(row.getCell(11)));
-                        booking.setStartTime(getDateValue(row.getCell(9)));
+//                        booking.setStartTime(getDateValue(row.getCell(9)));
                         booking.setStartLocation(getStringValue(row.getCell(6)));
                         booking.setDestination(getStringValue(row.getCell(7)));
                         booking.setNotes(getStringValue(row.getCell(13)));

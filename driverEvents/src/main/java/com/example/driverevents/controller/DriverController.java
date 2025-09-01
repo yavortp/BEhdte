@@ -25,9 +25,7 @@ public class DriverController {
 
     @PostMapping
     public ResponseEntity<?> createDriver(@Valid @RequestBody Driver driver) {
-//        if (driver.getName() == null || driver.getPhoneNumber() == null) {
-//            return ResponseEntity.badRequest().body("Name and phone number are required.");
-//        }
+
         if (driver.getVehicles() != null && driver.getVehicles().getId() != null) {
             Vehicle vehicle = vehicleRepository.findById(driver.getVehicles().getId())
                     .orElseThrow(() -> new RuntimeException("Vehicle not found"));
@@ -51,6 +49,7 @@ public class DriverController {
         return driverRepository.findById(id).map(driver -> {
             driver.setName(updatedDriver.getName());
             driver.setPhoneNumber(updatedDriver.getPhoneNumber());
+            driver.setEmail(updatedDriver.getEmail());
             if (updatedDriver.getVehicles() != null && updatedDriver.getVehicles().getId() != null) {
                 Vehicle vehicle = vehicleRepository.findById(updatedDriver.getVehicles().getId())
                         .orElseThrow(() -> new RuntimeException("Vehicle not found"));

@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Upload, FileText, CheckCircle, AlertCircle, Info } from 'lucide-react';
+import { Upload, FileText, CheckCircle, Info } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { read, utils } from 'xlsx';
 import { processBulkBookings } from '../services/bookingService';
@@ -20,16 +20,22 @@ const FileUpload: React.FC = () => {
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const selectedFile = e.target.files?.[0];
         if (selectedFile) {
+            setIsUploading(true);
             setFile(selectedFile);
+
             try {
-                const data = await readExcelFile(selectedFile);
-                setPreviewData(data.slice(0, 5)); // Preview only first 5 rows
+                    const data = await readExcelFile(selectedFile);
+                    setPreviewData(data.slice(0, 5)); // Preview only first 5 rows
             } catch (error) {
-                toast.error('Failed to read file. Please make sure it is a valid Excel file.');
-                setFile(null);
-                if (fileInputRef.current) {
-                    fileInputRef.current.value = '';
-                }
+                    console.error('Excel parsing failed:', error);
+                    toast.error('Failed to read file. Please make sure it is a valid Excel file.');
+                    setFile(null);
+
+                    if (fileInputRef.current) {
+                        fileInputRef.current.value = '';
+                    }
+            } finally {
+                    setIsUploading(false)
             }
         }
     };
@@ -38,19 +44,26 @@ const FileUpload: React.FC = () => {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
             reader.onload = (e) => {
+                const buffer = e.target?.result as ArrayBuffer;
+                if (!buffer) {
+                    reject(new Error("File read failed"));
+                    return;
+                }
                 try {
-                    const data = e.target?.result;
-                    const workbook = read(data, { type: 'binary' });
+                    const workbook = read(new Uint8Array(buffer), { type: "array" });
                     const sheetName = workbook.SheetNames[0];
                     const worksheet = workbook.Sheets[sheetName];
-                    const jsonData = utils.sheet_to_json(worksheet);
+                    const jsonData = utils.sheet_to_json(worksheet, { range: "A1:R20" });
                     resolve(jsonData);
-                } catch (error) {
-                    reject(error);
+                } catch (err) {
+                    reject(new Error("Excel parsing failed"));
                 }
             };
-            reader.onerror = (error) => reject(error);
-            reader.readAsBinaryString(file);
+                reader.onerror = (err) => {
+                    console.error("FileReader error:", err);
+                    reject(new Error("Could not read file"));
+                };
+            reader.readAsArrayBuffer(file);
         });
     };
 
@@ -66,10 +79,10 @@ const FileUpload: React.FC = () => {
             const possibleNames = {
                 bookingNumber: ['bookingNumber', 'booking number', 'booking_number', 'booking', 'id'],
                 startTime: ['startTime', 'start time', 'start_time', 'departure', 'departure time'],
-                destination: ['destination', 'dest', 'to', 'dropoff', 'drop off', 'drop-off']
+                destination: ['Destination', 'dest', 'to', 'dropoff', 'drop off', 'drop-off'],
+                startLocation: ['start location']
             };
 
-            // @ts-ignore
             return !Object.keys(firstRow).some(key =>
                 // @ts-ignore
                 possibleNames[field].some(name =>
@@ -95,7 +108,7 @@ const FileUpload: React.FC = () => {
             return {
                 bookingNumber: getFieldValue(['bookingNumber', 'booking number', 'booking_number', 'booking', 'id']),
                 startTime: getFieldValue(['startTime', 'start time', 'start_time', 'departure', 'departure time']),
-                destination: getFieldValue(['destination', 'dest', 'to', 'dropoff', 'drop off', 'drop-off']),
+                destination: getFieldValue(['destination', 'dest', 'to', 'drop off', 'drop-off']),
                 driverId: getFieldValue(['driverId', 'driver id', 'driver_id', 'driver']),
                 vehicleId: getFieldValue(['vehicleId', 'vehicle id', 'vehicle_id', 'vehicle']),
                 // Additional fields as needed
@@ -115,26 +128,24 @@ const FileUpload: React.FC = () => {
                 setIsUploading(false);
                 return;
             }
-
             const processedData = await processAndValidateData(excelData);
-
+            setPreviewData(processedData.slice(0, 5));
             // Send the processed data to the backend
-            const result = await processBulkBookings(processedData);
+            const result = await processBulkBookings(file);
 
             setUploadResult({
-                success: result.successCount,
-                failed: result.failedCount,
+                success: result.bookingsCreated,
+                failed: excelData.length - result.bookingsCreated,
                 total: excelData.length
             });
 
-            toast.success(`Successfully processed ${result.successCount} out of ${excelData.length} bookings.`);
+            toast.success(`Successfully processed ${result.bookingsCreated} out of ${excelData.length} bookings.`);
 
             // Reset the file input
             if (fileInputRef.current) {
                 fileInputRef.current.value = '';
             }
         } catch (error) {
-            console.error('Error processing file:', error);
             toast.error(error instanceof Error ? error.message : 'Failed to process the file.');
         } finally {
             setIsUploading(false);
@@ -198,8 +209,8 @@ const FileUpload: React.FC = () => {
                             <div className="flex flex-col items-center">
                                 <div
                                     className={`
-                    mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-md 
-                    ${file ? 'border-green-300 bg-green-50' : 'border-gray-300 hover:border-gray-400'} 
+                    mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-md
+                    ${file ? 'border-green-300 bg-green-50' : 'border-gray-300 hover:border-gray-400'}
                     transition-colors duration-200 w-full max-w-lg
                   `}
                                 >
@@ -300,7 +311,7 @@ const FileUpload: React.FC = () => {
                                                 onClick={handleUpload}
                                                 disabled={isUploading}
                                                 className={`
-                          inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm 
+                          inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm
                           text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
                           ${isUploading ? 'opacity-70 cursor-not-allowed' : ''}
                         `}
@@ -359,3 +370,4 @@ const FileUpload: React.FC = () => {
 };
 
 export default FileUpload;
+

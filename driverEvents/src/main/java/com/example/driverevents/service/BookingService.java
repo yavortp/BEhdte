@@ -2,6 +2,7 @@ package com.example.driverevents.service;
 
 import com.example.driverevents.model.Booking;
 import com.example.driverevents.model.Driver;
+import com.example.driverevents.model.ExternalBookingDTO;
 import com.example.driverevents.model.Vehicle;
 import com.example.driverevents.repository.BookingRepository;
 import com.example.driverevents.repository.DriverRepository;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.awt.print.Book;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -31,6 +33,8 @@ public class BookingService {
 
 
     public List<Booking> getAllBookings() {
+        List<Booking> bookings = bookingRepository.findAll();
+        System.out.println("Fetched startTime: " + bookings.get(0).getStartTime());
         return bookingRepository.findAll();
     }
 
@@ -54,6 +58,7 @@ public class BookingService {
     public Booking updateBooking(Long id, Booking bookingDetails) {
         Booking booking = getBookingById(id);
         booking.setStartTime(bookingDetails.getStartTime());
+        booking.setBookingDate(bookingDetails.getBookingDate());
         booking.setStartLocation(bookingDetails.getStartLocation());
         booking.setDestination(bookingDetails.getDestination());
         booking.setNotes(bookingDetails.getNotes());
@@ -62,18 +67,19 @@ public class BookingService {
         booking.setArrivalOrDeparture(bookingDetails.getArrivalOrDeparture());
 
         String driverName = bookingDetails.getDriverName();
-        Driver driver = driverRepository.findByNameIgnoreCase(driverName.trim())
-                .orElseThrow(() -> new EntityNotFoundException("Driver with name '" + driverName + "' not found"));
-        booking.setDriver(driver);
-        booking.setDriverName(driver.getName());
-//        if (driverName != null && !driverName.isBlank()) {
-//        }
-
-//        Vehicle vehicle = bookingDetails.getVehicle();
-//        if (vehicle != null) {
-//            booking.setVehicle(vehicle);
-//            booking.setVehicleNumber(vehicle.getRegistrationNumber());
-//            booking.setVehicleModel(vehicle.getModel());
+        driverName = driverName.trim().toLowerCase();
+        Optional<Driver> matchedDriverOpt = driverRepository.findByNameIgnoreCase(driverName);
+        if (matchedDriverOpt.isPresent()) {
+            Driver matchedDriver = matchedDriverOpt.get();
+            booking.setDriver(matchedDriver);
+            booking.setDriverName(matchedDriver.getName());
+            Vehicle vehicle = matchedDriver.getVehicles();
+            booking.setVehicle(vehicle);
+            booking.setVehicleNumber(vehicle.getRegistrationNumber());
+        } else {
+            booking.setDriver(null);
+            booking.setDriverName(driverName);
+        }
 
         return bookingRepository.save(booking);
     }
@@ -133,21 +139,29 @@ public class BookingService {
         return bookingRepository.save(booking);
     }
 
+//    @Transactional
+//    public Booking syncWithApi(Long bookingId) {
+//        Booking booking = getBookingById(bookingId);
+//
+//        if (booking.getDriver() == null ) {
+//            throw new IllegalStateException("Booking must have a driver and vehicle assigned before syncing!");
+//        }
+//
+//        if (booking.getDriver().getVehicles() == null) {
+//            throw new IllegalStateException("Driver must have a vehicle assigned before syncing booking");
+//        }
+//
+////        externalApiService.sendBookingsToApi(booking);
+//        booking.setSyncedWithApi(true);
+//        return bookingRepository.save(booking);
+//    }
+
     @Transactional
-    public Booking syncWithApi(Long bookingId) {
-        Booking booking = getBookingById(bookingId);
-
-        if (booking.getDriver() == null ) {         //|| booking.getVehicle() == null
-            throw new IllegalStateException("Booking must have a driver and vehicle assigned before syncing!");
+    public void deleteMultipleBookings(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            throw new IllegalArgumentException("No booking IDs provided");
         }
-
-        if (booking.getDriver().getVehicles() == null) {
-            throw new IllegalStateException("Driver must have a vehicle assigned before syncing booking");
-        }
-
-        externalApiService.sendBookingToApi(booking);
-        booking.setSyncedWithApi(true);
-        return bookingRepository.save(booking);
+        bookingRepository.deleteAllByIdIn(ids);
     }
 
     public List<Booking> getBookingsForDateRange(LocalDateTime start, LocalDateTime end) {

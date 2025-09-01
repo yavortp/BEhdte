@@ -10,6 +10,10 @@ import Bookings from './pages/Bookings';
 import Drivers from './pages/Drivers';
 import Vehicles from './pages/Vehicles';
 import NotFound from './pages/NotFound';
+import Destinations from "./pages/Destinations.tsx";
+import LocationMapPage from "./pages/LocationMapPage.tsx";
+import Login from './pages/Login';
+import PrivateRoute from './components/PrivateRoute';
 
 function App() {
     return (
@@ -17,12 +21,51 @@ function App() {
             <ToastContainer position="top-right" autoClose={3000} />
             <Routes>
                 <Route path="/" element={<Layout />}>
-                    <Route index element={<Dashboard />} />
-                    <Route path="upload" element={<FileUpload />} />
-                    <Route path="bookings" element={<Bookings />} />
-                    <Route path="bookings/:id" element={<BookingDetails />} />
-                    <Route path="drivers" element={<Drivers />} />
-                    <Route path="vehicles" element={<Vehicles />} />
+                    <Route path="/login" element={<Login />} />
+
+                    {/* Protected Routes */}
+                    <Route index element={
+                        <PrivateRoute>
+                            <Dashboard />
+                        </PrivateRoute>
+                    } />
+                    <Route path="upload" element={
+                        <PrivateRoute>
+                            <FileUpload />
+                        </PrivateRoute>
+                    } />
+                    <Route path="bookings" element={
+                        <PrivateRoute>
+                            <Bookings />
+                        </PrivateRoute>
+                    } />
+                    <Route path="bookings/:id" element={
+                        <PrivateRoute>
+                            <BookingDetails />
+                        </PrivateRoute>
+                    } />
+                    <Route path="drivers" element={
+                        <PrivateRoute>
+                            <Drivers />
+                        </PrivateRoute>
+                    } />
+                    <Route path="vehicles" element={
+                        <PrivateRoute>
+                            <Vehicles />
+                        </PrivateRoute>
+                    } />
+                    <Route path="destinations" element={
+                        <PrivateRoute>
+                            <Destinations />
+                        </PrivateRoute>
+                    } />
+                    <Route path="locationmap" element={
+                        <PrivateRoute>
+                            <LocationMapPage />
+                        </PrivateRoute>
+                    } />
+
+                    {/* Public fallback */}
                     <Route path="*" element={<NotFound />} />
                 </Route>
             </Routes>

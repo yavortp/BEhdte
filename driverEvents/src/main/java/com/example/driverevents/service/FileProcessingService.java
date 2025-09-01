@@ -2,6 +2,8 @@ package com.example.driverevents.service;
 
 import com.example.driverevents.model.Booking;
 import com.example.driverevents.model.Driver;
+import com.example.driverevents.model.Vehicle;
+import com.example.driverevents.repository.BookingRepository;
 import com.example.driverevents.repository.DriverRepository;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.*;
@@ -9,8 +11,8 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
+import java.time.*;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @Service
@@ -18,6 +20,7 @@ import java.util.*;
 public class FileProcessingService {
     private final BookingService bookingService;
     private final DriverRepository driverRepository;
+    private final BookingRepository bookingRepository;
 
     public List<Booking> processExcelFile(MultipartFile file) throws IOException {
         List<Booking> bookings = new ArrayList<>();
@@ -25,59 +28,86 @@ public class FileProcessingService {
         try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
             Sheet sheet = workbook.getSheetAt(0);
             Iterator<Row> rows = sheet.iterator();
-
+            // map with header names
             Map<String, Integer> columnIndexMap = new HashMap<>();
 
-            // Read header
+            // Read header and save names in map above
             Row headerRow = rows.next();
             for (Cell cell : headerRow) {
                 String header = cell.getStringCellValue().trim().toLowerCase();
                 columnIndexMap.put(header, cell.getColumnIndex());
             }
 
-            // Skip header row
-            if (rows.hasNext()) {
-                rows.next();
-            }
-
             while (rows.hasNext()) {
 
                 Row row = rows.next();
-                Booking booking = new Booking();
-
-                if (booking.getBookingNumber() == null || booking.getStartLocation() == null) {
-                    continue; // skip invalid row
-                }
-                // column names are already set in the Map above
-                booking.setBookingNumber(getCellValueAsString(row.getCell(columnIndexMap.get("booking number"))));
-                booking.setStartTime(getCellValueAsDateTime(row.getCell(columnIndexMap.get("start time"))));
-                booking.setStartLocation(getCellValueAsString(row.getCell(columnIndexMap.get("start location"))));
-                booking.setDestination(getCellValueAsString(row.getCell(columnIndexMap.get("destination"))));
-                booking.setArrivalOrDeparture(getCellValueAsString(row.getCell(columnIndexMap.get("arrival or departure"))));
-                booking.setPRVorShuttle(getCellValueAsString(row.getCell(columnIndexMap.get("prvor shuttle"))));
-
-                String driverName = (getCellValueAsString(row.getCell(columnIndexMap.get("driver"))));
-                Driver matchedDriver = driverRepository.findByName(driverName);
-                if (matchedDriver != null) {
-                    booking.setDriver(matchedDriver);
-                    booking.setDriverName(matchedDriver.getName());
-                } else {
-                    booking.setDriver(null);
-                    booking.setDriverName(driverName);
+                String guard = getCellValueAsString(row.getCell(0));
+                if (guard.isBlank()) {
+                    break;
                 }
 
-                booking.setSyncedWithApi(false);
+                try {
+                    Booking booking = new Booking();
+//                    String bookingNumber = getCellValueAsString(row.getCell(columnIndexMap.get("booking number"))).trim();
 
-                bookings.add(bookingService.createBooking(booking));
+                    // column names are already set in the Map above
+                    booking.setBookingNumber(getCellValueAsString(row.getCell(columnIndexMap.get("booking number"))).trim());
+
+                    if (booking.getBookingNumber() == null) {
+                        continue;
+                    }
+
+                    booking.setStartLocation(getCellValueAsString(row.getCell(columnIndexMap.get("from"))));
+                    booking.setDestination(getCellValueAsString(row.getCell(columnIndexMap.get("destination"))));
+                    booking.setArrivalOrDeparture(getCellValueAsString(row.getCell(columnIndexMap.get("type"))));
+                    booking.setPRVorShuttle(getCellValueAsString(row.getCell(columnIndexMap.get("transp"))));
+                    Cell dateCell = row.getCell(columnIndexMap.get("date"));
+                    Cell timeCell = row.getCell(columnIndexMap.get("start time"));
+                    DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
+                    LocalTime startTime = extractLocalTime(timeCell, timeFormatter);
+                    booking.setStartTime(startTime);
+                    booking.setBookingDate(dateCell.getStringCellValue().trim());
+
+                    String driverName = (getCellValueAsString(row.getCell(columnIndexMap.get("driver"))));
+                    driverName = driverName.trim().toLowerCase();
+                    Optional<Driver> matchedDriverOpt = driverRepository.findByNameIgnoreCase(driverName);
+                    if (matchedDriverOpt.isPresent()) {
+                        Driver matchedDriver = matchedDriverOpt.get();
+                        booking.setDriver(matchedDriver);
+                        booking.setDriverName(matchedDriver.getName());
+                        Vehicle vehicle = matchedDriver.getVehicles();
+                        booking.setVehicle(vehicle);
+                        booking.setVehicleNumber(vehicle.getRegistrationNumber());
+                    } else {
+                        booking.setDriver(null);
+                        booking.setDriverName(driverName);
+                    }
+                    booking.setSyncedWithApi(false);
+
+                    Optional<Booking> existingBookingOpt = bookingRepository.findByBookingNumber(booking.getBookingNumber());
+
+                    if (existingBookingOpt.isPresent()) {
+                        Booking updatedBooking = bookingService.updateBooking(existingBookingOpt.get().getId(), booking);
+                        bookings.add(bookingRepository.save(updatedBooking));
+                    } else {
+                        bookings.add(bookingService.createBooking(booking));
+                    }
+//                    bookings.add(bookingService.createBooking(booking));
+                } catch (Exception e) {
+//                    System.out.println("❌ Crash at row " + row.getRowNum() + ": " + e.getMessage());
+                    e.printStackTrace();
+                    continue;
+                }
             }
         }
-
         return bookings;
     }
 
+
+
     private String getCellValueAsString(Cell cell) {
         if (cell == null) {
-            return null;
+            return "";
         }
 
         switch (cell.getCellType()) {
@@ -86,22 +116,31 @@ public class FileProcessingService {
             case NUMERIC:
                 return String.valueOf((long) cell.getNumericCellValue());
             default:
-                return null;
+                return "";
         }
     }
 
-    private LocalDateTime getCellValueAsDateTime(Cell cell) {
-        if (cell == null) {
-            return null;
-        }
+    private LocalTime extractLocalTime(Cell timeCell, DateTimeFormatter timeFormatter) {
+        LocalTime timePart;
 
-        if (cell.getCellType() == CellType.NUMERIC && DateUtil.isCellDateFormatted(cell)) {
-            return cell.getDateCellValue()
-                    .toInstant()
-                    .atZone(ZoneId.systemDefault())
-                    .toLocalDateTime();
-        }
+        if (timeCell != null) {
+            switch (timeCell.getCellType()) {
+                case STRING:
+                    timePart = LocalTime.parse(timeCell.getStringCellValue().trim(), timeFormatter);
+                    break;
+                case NUMERIC:
+                    if (DateUtil.isCellDateFormatted(timeCell)) {
+                        timePart = timeCell.getLocalDateTimeCellValue().toLocalTime();
+                    } else {
+                        timePart = LocalTime.parse(String.valueOf(timeCell.getNumericCellValue()), timeFormatter);
+                    }
+                    break;
+                default:
+                    throw new RuntimeException("Unexpected cell type in timeCell");
+            }
 
+            return timePart;
+        }
         return null;
     }
 }

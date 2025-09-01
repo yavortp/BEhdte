@@ -30,7 +30,7 @@ public class DestinationController {
         return ResponseEntity.ok(destinationsRepository.findAll());
     }
 
-    @PutMapping
+    @PutMapping("/{id}")
     public ResponseEntity<?> updateDestination(@PathVariable Long id, @RequestBody Destination updateDestination) {
         return destinationsRepository.findById(id).map(destination -> {
             destination.setStartLocation(updateDestination.getStartLocation());
@@ -40,7 +40,7 @@ public class DestinationController {
         }).orElse(ResponseEntity.notFound().build());
     }
 
-    @DeleteMapping
+    @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteDestination(@PathVariable Long id) {
         if (!destinationsRepository.existsById(id)) {
             return ResponseEntity.notFound().build();

@@ -34,9 +34,7 @@ const Drivers: React.FC = () => {
     const [statusFilter, setStatusFilter] = useState<string>('all');
     const [editingId, setEditingId] = useState<string | null>(null);
     const [showAddForm, setShowAddForm] = useState<boolean>(false);
-
     const { register, handleSubmit, reset, formState: { errors } } = useForm<DriverFormData>();
-
     const [vehicles, setVehicles] = useState<Vehicle[]>([]);
 
     const loadDrivers = async () => {
@@ -71,6 +69,13 @@ const Drivers: React.FC = () => {
     useEffect(() => {
         filterDrivers();
     }, [drivers, searchTerm, statusFilter]);
+
+    useEffect(() => {
+        fetch('/api/vehicles')
+            .then(res => res.json())
+            .then(data => setVehicles(data))
+            .catch(err => console.error('Failed to load vehicles', err));
+    }, []);
 
 
     const filterDrivers = () => {
@@ -126,6 +131,7 @@ const Drivers: React.FC = () => {
             email: '',
             phone: '',
             status: 'available',
+            vehicleId: '',
         });
     };
 
@@ -264,7 +270,7 @@ const Drivers: React.FC = () => {
                                     {...register('email', {
                                         required: 'Email is required',
                                         pattern: {
-                                            value: /^\S+@\S+$/i,
+                                            value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
                                             message: 'Invalid email address'
                                         }
                                     })}
@@ -309,6 +315,23 @@ const Drivers: React.FC = () => {
                                 )}
                             </div>
 
+                            <div className="mb-4">
+                                <label htmlFor="vehicleId" className="block text-sm font-medium text-gray-700">
+                                    Assign Vehicle
+                                </label>
+                                <select
+                                    {...register('vehicleId')}
+                                    id="vehicleId"
+                                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+                                >
+                                    <option value="">— Select a vehicle —</option>
+                                    {vehicles.map(vehicle => (
+                                        <option key={vehicle.id} value={vehicle.id}>
+                                            {vehicle.registrationNumber} — {vehicle.brand} {vehicle.model}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
 
                             <div>
                                 <label htmlFor="status" className="block text-sm font-medium text-gray-700">

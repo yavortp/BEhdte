@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { format } from 'date-fns';
+import {format, isValid, parse} from 'date-fns';
 import {
     Plus, Search, Filter, Calendar, MapPin, User, Truck,
     CheckCircle, XCircle, AlertTriangle, Trash2, Eye
@@ -15,6 +15,30 @@ const Bookings: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState<string>('');
     const [statusFilter, setStatusFilter] = useState<string>('all');
     const [dateFilter, setDateFilter] = useState<string>('all');
+    const [selectedBookings, setSelectedBookings] = useState<string[]>([]);
+    const [page, setPage] = useState(1);
+    const [pageSize] = useState(20);            // change bookings per page here!!!
+
+    useEffect(() => {
+        const loadBookings = async () => {
+            try {
+                const res = await fetch(`/api/bookings?page=${page}&size=${pageSize}`);
+
+                if (!res.ok) {
+                    const errorText = await res.text(); // Read raw response
+                    console.error(`Server error ${res.status}:`, errorText);
+                    return;
+                }
+
+                const data = await res.json();
+                setBookings(data);
+            } catch (err) {
+                console.error('Fetch failed:', err);
+            }
+        };
+
+        loadBookings();
+    }, [page]);
 
     useEffect(() => {
         loadBookings();
@@ -36,6 +60,74 @@ const Bookings: React.FC = () => {
             setIsLoading(false);
         }
     };
+
+    const toggleBookingSelection = (id: string) => {
+        setSelectedBookings(prev =>
+            prev.includes(id) ? prev.filter(b => b !== id) : [...prev, id]
+        );
+    };
+
+    const toggleSelectAll = () => {
+        if (selectedBookings.length === sortedBookings.length) {
+            setSelectedBookings([]);
+        } else {
+            setSelectedBookings(sortedBookings.map(b => b.id));
+        }
+    };
+
+    const normalizeBookingDate = (dateStr: unknown): Date | null => {
+        if (!dateStr) return null;
+        if (dateStr instanceof Date) {
+            return dateStr;
+        }
+        if (typeof dateStr === 'string') {
+            const parsed = parse(dateStr, 'dd.MM.yyyy', new Date());
+            return isValid(parsed) ? parsed : null;
+        }
+        return null;
+    };
+
+    // 1. Group bookings by date, then sort by time within each date
+    const groupedSortedBookings: Record<string, Booking[]> = {};
+
+    filteredBookings.forEach((booking) => {
+        const normalizedDate = normalizeBookingDate(booking.bookingDate);
+
+        const dateKey = normalizedDate
+            ? format(normalizedDate, 'dd.MM.yyyy') // consistent string for grouping
+            : 'Unknown';
+
+        if (!groupedSortedBookings[dateKey]) {
+            groupedSortedBookings[dateKey] = [];
+        }
+
+        groupedSortedBookings[dateKey].push({
+            ...booking,
+            bookingDate: normalizedDate, // optional: keep normalized for later use
+        });
+    });
+
+// 2. Sort each date's bookings by start time
+    Object.keys(groupedSortedBookings).forEach((dateKey) => {
+        groupedSortedBookings[dateKey].sort((a, b) => {
+            const aTime = a.startTime || '00:00:00';
+            const bTime = b.startTime || '00:00:00';
+            return aTime.localeCompare(bTime);
+        });
+    });
+
+// 3. Flatten into one sorted array, by date then time
+    const sortedBookings = Object.keys(groupedSortedBookings)
+        .sort((a, b) => {
+            const aDate = groupedSortedBookings[a][0]?.bookingDate
+                ? new Date(groupedSortedBookings[a][0].bookingDate).getTime()
+                : 0;
+            const bDate = groupedSortedBookings[b][0]?.bookingDate
+                ? new Date(groupedSortedBookings[b][0].bookingDate).getTime()
+                : 0;
+            return aDate - bDate; // ascending
+        })
+        .flatMap((dateKey) => groupedSortedBookings[dateKey]);
 
     const filterBookings = () => {
         let filtered = [...bookings];
@@ -98,6 +190,45 @@ const Bookings: React.FC = () => {
         }
 
         setFilteredBookings(filtered);
+    };
+
+    const handleSyncSelected = async () => {
+        try {
+            const response = await fetch('http://localhost:8080/api/bookings/sync', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(selectedBookings.map(id => parseInt(id)))
+            });
+
+            if (!response.ok) throw new Error('Sync failed');
+            toast.success('Bookings synced successfully');
+            loadBookings(); // Refresh list
+            setSelectedBookings([]); // Clear selection
+        } catch (error) {
+            toast.error('Failed to sync bookings');
+            console.error(error);
+        }
+    };
+
+    const handleDeleteSelected = async () => {
+        try {
+            const response = await fetch('http://localhost:8080/api/bookings/bulk-delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(selectedBookings.map(id => parseInt(id)))
+            });
+
+            if (!response.ok) {
+                throw new Error(`Delete failed with status ${response.status}`);
+            }
+
+            toast.success('Bookings deleted successfully');
+            loadBookings(); // Refresh list
+            setSelectedBookings([]); // Clear selection
+        } catch (error) {
+            toast.error('Failed to delete bookings');
+            console.error(error);
+        }
     };
 
     const handleDelete = async (id: string, bookingNumber: string) => {
@@ -233,10 +364,47 @@ const Bookings: React.FC = () => {
 
             {/* Results Summary */}
             <div className="bg-white shadow rounded-lg p-4">
-                <p className="text-sm text-gray-600">
-                    Showing {filteredBookings.length} of {bookings.length} bookings
+                {/*<p className="text-sm text-gray-600">*/}
+                {/*    Showing {filteredBookings.length} of {bookings.length} bookings; */}
+                {/*</p>*/}
+                <p style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    fontStyle: 'italic',
+                    color: '#666'
+                }}>
+                    <span>Showing: {filteredBookings.length} of {bookings.length} bookings</span>
+                    <span>Sorted by date, then by time ⏳</span>
                 </p>
             </div>
+
+            {/* Bulk Action Buttons */}
+            <div className="flex items-center space-x-2 mb-4">
+                <button
+                    onClick={() => handleSyncSelected()}
+                    disabled={selectedBookings.length === 0}
+                    className="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                >
+                    Sync Selected
+                </button>
+                <button
+                    onClick={() => handleDeleteSelected()}
+                    disabled={selectedBookings.length === 0}
+                    className="px-3 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                >
+                    Delete Selected
+                </button>
+
+                {/* Selection Count */}
+                {selectedBookings.length > 0 && (
+                    <div className="text-sm text-gray-600">
+                        {selectedBookings.length} booking{selectedBookings.length > 1 ? 's' : ''} selected
+                    </div>
+                )}
+
+            </div>
+
+
 
             {/* Bookings Table */}
             <div className="bg-white shadow rounded-lg overflow-hidden">
@@ -244,6 +412,14 @@ const Bookings: React.FC = () => {
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
                         <tr>
+                            <th className="w-12 px-2 py-3 text-center">
+                                <input
+                                    type="checkbox"
+                                    onChange={toggleSelectAll}
+                                    checked={selectedBookings.length === sortedBookings.length}
+                                    className="form-checkbox h-4 w-4"
+                                />
+                            </th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Booking
                             </th>
@@ -262,16 +438,25 @@ const Bookings: React.FC = () => {
                         </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                        {filteredBookings.map((booking) => (
+                        {sortedBookings.map((booking) => (
                             <tr key={booking.id} className="hover:bg-gray-50">
+                                <td className="w-8 px-2 py-4 text-center">
+                                    <input
+                                        type="checkbox"
+                                        checked={selectedBookings.includes(booking.id)}
+                                        onChange={() => toggleBookingSelection(booking.id)}
+                                        className="form-checkbox h-4 w-4"
+                                    />
+                                </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     <div>
-                                        <div className="text-sm font-medium text-gray-900">
+                                        <div className="text-xl font-semibold text-gray-900">
                                             {booking.bookingNumber}
                                         </div>
                                         <div className="text-sm text-gray-500 flex items-center">
                                             <MapPin className="h-4 w-4 mr-1" />
-                                            {booking.destination}
+                                            <span className="mr-1">Destination:</span>
+                                            {booking.destination.toUpperCase()}
                                         </div>
                                     </div>
                                 </td>
@@ -279,27 +464,33 @@ const Bookings: React.FC = () => {
                                     <div className="flex items-center text-sm text-gray-900">
                                         <Calendar className="h-4 w-4 mr-2 text-gray-400" />
                                         <div>
-                                            <div>{format(new Date(booking.startTime), 'MMM d, yyyy')}</div>
-                                            <div className="text-gray-500">{format(new Date(booking.startTime), 'h:mm a')}</div>
+                                            <div>{booking.bookingDate && !isNaN(Date.parse(booking.bookingDate))
+                                                ? format(new Date(booking.bookingDate), 'dd MMM yyyy')
+                                                : '—'}</div>
+                                            <div className="text-gray-500">
+                                                {booking.startTime
+                                                    ? booking.startTime.slice(0, 5) // display type - "20:00"
+                                                    : '—'}
+                                            </div>
                                         </div>
                                     </div>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     <div className="space-y-1">
-                                        {booking.driverId ? (
+                                        {booking.driver ? (
                                             <div className="flex items-center text-sm text-gray-700">
                                                 <User className="h-4 w-4 mr-1 text-gray-400" />
-                                                <span>{booking.driverName}</span>
+                                                <span>{booking.driver.name}</span>
                                             </div>
                                         ) : (
                                             <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
                           No Driver
                         </span>
                                         )}
-                                        {booking.vehicleId ? (
+                                        {booking.vehicle ? (
                                             <div className="flex items-center text-sm text-gray-700">
                                                 <Truck className="h-4 w-4 mr-1 text-gray-400" />
-                                                <span>{booking.vehicleNumber}</span>
+                                                <span>{booking.vehicle.registrationNumber}</span>
                                             </div>
                                         ) : (
                                             <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
@@ -333,6 +524,22 @@ const Bookings: React.FC = () => {
                         ))}
                         </tbody>
                     </table>
+                </div>
+
+                <div className="flex justify-between items-center mt-4">
+                    <button
+                        onClick={() => setPage(p => Math.max(p - 1, 1))}
+                        className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300"
+                    >
+                        Previous Page
+                    </button>
+                    <span>Page {page}</span>
+                    <button
+                        onClick={() => setPage(p => p + 1)}
+                        className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300"
+                    >
+                        Next Page
+                    </button>
                 </div>
 
                 {filteredBookings.length === 0 && (

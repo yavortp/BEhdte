@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Calendar, Truck, Users, FileSpreadsheet, Settings, HelpCircle } from 'lucide-react';
+import {Home, Calendar, Truck, Users, FileSpreadsheet, MapPin, Map} from 'lucide-react';
 
 const Sidebar: React.FC = () => {
     return (
@@ -88,6 +88,20 @@ const Sidebar: React.FC = () => {
                             Vehicles
                         </NavLink>
 
+                        <NavLink
+                            to="/destinations"
+                            className={({ isActive }) =>
+                                `flex items-center px-4 py-2 text-sm font-medium rounded-md ${
+                                    isActive
+                                        ? 'bg-blue-50 text-blue-700'
+                                        : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                                }`
+                            }
+                        >
+                            <MapPin size={20} className="mr-3 flex-shrink-0" />
+                            Destinations
+                        </NavLink>
+
                         <div className="pt-4 pb-2">
                             <div className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                                 Configuration
@@ -95,7 +109,7 @@ const Sidebar: React.FC = () => {
                         </div>
 
                         <NavLink
-                            to="/settings"
+                            to="/locationmap"
                             className={({ isActive }) =>
                                 `flex items-center px-4 py-2 text-sm font-medium rounded-md ${
                                     isActive
@@ -104,23 +118,23 @@ const Sidebar: React.FC = () => {
                                 }`
                             }
                         >
-                            <Settings size={20} className="mr-3 flex-shrink-0" />
-                            Settings
+                            <Map size={20} className="mr-3 flex-shrink-0" />
+                            Location Map
                         </NavLink>
 
-                        <NavLink
-                            to="/help"
-                            className={({ isActive }) =>
-                                `flex items-center px-4 py-2 text-sm font-medium rounded-md ${
-                                    isActive
-                                        ? 'bg-blue-50 text-blue-700'
-                                        : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
-                                }`
-                            }
-                        >
-                            <HelpCircle size={20} className="mr-3 flex-shrink-0" />
-                            Help & Support
-                        </NavLink>
+                        {/*<NavLink*/}
+                        {/*    to="/help"*/}
+                        {/*    className={({ isActive }) =>*/}
+                        {/*        `flex items-center px-4 py-2 text-sm font-medium rounded-md ${*/}
+                        {/*            isActive*/}
+                        {/*                ? 'bg-blue-50 text-blue-700'*/}
+                        {/*                : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'*/}
+                        {/*        }`*/}
+                        {/*    }*/}
+                        {/*>*/}
+                        {/*    <HelpCircle size={20} className="mr-3 flex-shrink-0" />*/}
+                        {/*    Help & Support*/}
+                        {/*</NavLink>*/}
                     </nav>
                 </div>
             </div>

@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { format } from 'date-fns';
 import {
     Plus, Search, Filter, Truck, CheckCircle, AlertTriangle, Edit, Trash2, Save, X
 } from 'lucide-react';
@@ -33,6 +32,7 @@ const Vehicles: React.FC = () => {
     const [typeFilter, setTypeFilter] = useState<string>('all');
     const [editingId, setEditingId] = useState<string | null>(null);
     const [showAddForm, setShowAddForm] = useState<boolean>(false);
+    const [vehicleTypeFilter, setVehicleTypeFilter] = useState('');
 
 
     const { register, handleSubmit, reset, formState: { errors} } = useForm<VehicleFormData>();
@@ -42,14 +42,14 @@ const Vehicles: React.FC = () => {
     }, []);
 
     useEffect(() => {
-        filterVehicles();
-    }, [vehicles, searchTerm, statusFilter, typeFilter]);
-
-    useEffect(() => {
         getVehicles()
             .then((data) => setVehicles(data))
             .catch((err) => console.error("Fetch error:", err));
     }, []);
+
+    useEffect(() => {
+        filterVehicles();
+    }, [vehicles, searchTerm, statusFilter, typeFilter]);
 
 
     const loadVehicles = async () => {
@@ -70,21 +70,29 @@ const Vehicles: React.FC = () => {
 
         // Search filter
         if (searchTerm) {
-            filtered = filtered.filter(vehicle =>
-                vehicle.registrationNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                vehicle.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                vehicle.description.toLowerCase().includes(searchTerm.toLowerCase())
-            );
+            filtered = filtered.filter(vehicle => {
+                if (!vehicle) return false;
+                const desc = vehicle.description || '';
+                return (
+                    vehicle.registrationNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    vehicle.model?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    desc.toLowerCase().includes(searchTerm.toLowerCase())
+                );
+            });
         }
 
         // Status filter
         if (statusFilter !== 'all') {
-            filtered = filtered.filter(vehicle => vehicle.status === statusFilter);
+            filtered = filtered.filter(vehicle => vehicle?.status === statusFilter);
         }
 
         // Type filter
-        if (typeFilter !== 'all') {
-            filtered = filtered.filter(vehicle => vehicle.description === typeFilter);
+        if (typeFilter.trim() !== '' && typeFilter !== 'all') {
+            const keywords = typeFilter.toLowerCase().split(' ');
+            filtered = filtered.filter(vehicle => {
+                const desc = vehicle.description ?? '';
+                return keywords.every(kw => desc.toLowerCase().includes(kw));
+            });
         }
 
         setFilteredVehicles(filtered);
@@ -189,24 +197,27 @@ const Vehicles: React.FC = () => {
             In Use
           </span>
                 );
-          //   case 'maintenance':
-          //       return (
-          //           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-          //   <Wrench className="h-3 w-3 mr-1" />
-          //   Maintenance
-          // </span>
-          //       );
             default:
                 return null;
         }
     };
 
-    const getTypeIcon = (_: string) => {
-        // we can customize icons based on vehicle type
-        return <Truck className="h-5 w-5 text-gray-600" />;
-    };
+    const getTypeIcon = (type: string | null) => {
+        const normalizedType = type?.toLowerCase() ?? 'unknown';
 
-    const vehicleTypes = [...new Set(vehicles.map(v => v.description))];
+        switch (normalizedType) {
+            case 'truck':
+                return <Truck className="h-5 w-5 text-gray-600" />;
+            // case 'car':
+            //     return <Car className="h-5 w-5 text-gray-600" />;
+            // case 'bus':
+            //     return <Bus className="h-5 w-5 text-gray-600" />;
+            // case 'bike':
+            //     return <Bike className="h-5 w-5 text-gray-600" />;
+            default:
+                return <Truck className="h-5 w-5 text-gray-400" />; // fallback icon
+        }
+    };
 
     if (isLoading) {
         return (
@@ -305,17 +316,13 @@ const Vehicles: React.FC = () => {
                                 <label htmlFor="type" className="block text-sm font-medium text-gray-700">
                                     Type
                                 </label>
-                                <select
+                                <input
+                                    type="text"
                                     id="type"
                                     {...register('description', { required: 'Type is required' })}
+                                    placeholder="Enter vehicle type"
                                     className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                                >
-                                    <option value="sedan">Sedan</option>
-                                    <option value="suv">SUV</option>
-                                    <option value="van">Van</option>
-                                    <option value="truck">Truck</option>
-                                    <option value="bus">Bus</option>
-                                </select>
+                                />
                                 {errors.description && (
                                     <p className="mt-1 text-sm text-red-600">{errors.description.message}</p>
                                 )}
@@ -351,7 +358,6 @@ const Vehicles: React.FC = () => {
                                 >
                                     <option value="available">Available</option>
                                     <option value="in-use">In Use</option>
-                                    {/*<option value="maintenance">Maintenance</option>*/}
                                 </select>
                             </div>
 
@@ -417,21 +423,13 @@ const Vehicles: React.FC = () => {
                         <label htmlFor="type-filter" className="block text-sm font-medium text-gray-700 mb-1">
                             Type
                         </label>
-                        <select
-                            id="type-filter"
-                            value={typeFilter}
-                            onChange={(e) => setTypeFilter(e.target.value)}
-                            className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                        >
-                            <option value="all">All Types</option>
-                            {vehicleTypes.map((type, index) => (
-                                <option key={index} value={type}>
-                                    {typeof type === "string"
-                                        ? type.charAt(0).toUpperCase() + type.slice(1)
-                                        : "Unknown"}
-                                </option>
-                            ))}
-                        </select>
+                        <input
+                            type="text"
+                            value={vehicleTypeFilter}
+                            onChange={(e) => setVehicleTypeFilter(e.target.value)}
+                            placeholder="Filter by type (e.g. SUV, Truck)"
+                            className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                        />
                     </div>
 
                     <div className="flex items-end">
@@ -513,16 +511,13 @@ const Vehicles: React.FC = () => {
                                                     )}
                                                 </div>
                                                 <div>
-                                                    <select
+                                                    <input
+                                                        type="text"
+                                                        id="type"
                                                         {...register('description', { required: 'Type is required' })}
-                                                        className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                                                    >
-                                                        <option value="sedan">Sedan</option>
-                                                        <option value="suv">SUV</option>
-                                                        <option value="van">Van</option>
-                                                        <option value="truck">Truck</option>
-                                                        <option value="bus">Bus</option>
-                                                    </select>
+                                                        placeholder="Enter vehicle type"
+                                                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                                    />
                                                 </div>
                                                 <div>
                                                     <input
@@ -560,10 +555,9 @@ const Vehicles: React.FC = () => {
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="flex items-center">
                                                 <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center">
-                                                    {getTypeIcon(vehicle.description)}
+                                                    {getTypeIcon(vehicle.description ?? '')}
                                                 </div>
                                                 <div className="ml-4">
-                                                    {/*<div className="text-sm font-medium text-gray-900">{vehicle.registrationNumber}</div>*/}
                                                     <div className="text-sm text-gray-500">{vehicle.brand + ' ' + vehicle.model}</div>
                                                 </div>
                                             </div>
@@ -571,7 +565,7 @@ const Vehicles: React.FC = () => {
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="space-y-1">
                                                 <div className="text-sm text-gray-900">
-                                                    Type: <span className="font-medium capitalize">{vehicle.description}</span>
+                                                    Type: <span className="font-medium capitalize">{vehicle.description ?? 'Unknown'}</span>
                                                 </div>
                                                 <div className="text-sm text-gray-500">
                                                     {vehicle.capacity} passengers
@@ -583,9 +577,6 @@ const Vehicles: React.FC = () => {
                                                 <div className="text-sm text-gray-900">
                                                     Licence: <span className="inline-block px-2 py-1 text-base font-semibold text-blue-700 bg-blue-100 rounded">{vehicle.registrationNumber}</span>
                                                 </div>
-                                                {/*<div className="text-sm text-gray-500">*/}
-                                                {/*    Reg. Number: {vehicle.number}*/}
-                                                {/*</div>*/}
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
@@ -596,25 +587,8 @@ const Vehicles: React.FC = () => {
                                             >
                                                 <option value="available">Available</option>
                                                 <option value="in-use">In Use</option>
-                                                {/*<option value="maintenance">Maintenance</option>*/}
                                             </select>
                                         </td>
-                                        {/*<td className="px-6 py-4 whitespace-nowrap">*/}
-                                        {/*    {vehicle.lastMaintenance ? (*/}
-                                        {/*        <div className="flex items-center text-sm text-gray-700">*/}
-                                        {/*            <Calendar className="h-4 w-4 mr-1 text-gray-400" />*/}
-                                        {/*            <span>{format(new Date(vehicle.lastMaintenance), 'MMM d, yyyy')}</span>*/}
-                                        {/*        </div>*/}
-                                        {/*    ) : (*/}
-                                        {/*        <span className="text-sm text-gray-500">No maintenance recorded</span>*/}
-                                        {/*    )}*/}
-                                        {/*</td>*/}
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {new Date(vehicle.createdAt ?? '').toString() !== 'Invalid Date'
-                                                ? format(new Date(vehicle.createdAt), 'MMM d, yyyy')
-                                                : 'Unknown creation date'}
-                                        </td>
-
                                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                             <div className="flex items-center justify-end space-x-2">
                                                 <button

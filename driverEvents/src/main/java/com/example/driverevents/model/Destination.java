@@ -20,8 +20,7 @@ public class Destination {
     @NotNull
     private String endLocation;
 
+    @NotNull
     @Positive
     private Integer durationMinutes;
-
-
 }

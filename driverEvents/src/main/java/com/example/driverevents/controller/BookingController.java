@@ -1,12 +1,16 @@
 package com.example.driverevents.controller;
 
+import com.example.driverevents.ExternalApiException;
 import com.example.driverevents.model.Booking;
 import com.example.driverevents.repository.BookingRepository;
 import com.example.driverevents.service.BookingService;
+import com.example.driverevents.service.BookingsSyncService;
 import com.example.driverevents.service.FileProcessingService;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.*;
@@ -20,18 +24,28 @@ import java.util.Map;
 @Service
 @RestController
 @RequestMapping("/api/bookings")
-@RequiredArgsConstructor
 @CrossOrigin(origins = "*")
 public class BookingController {
     private final BookingService bookingService;
     private final FileProcessingService fileProcessingService;
-    private final BookingRepository bookingRepository;
+    private final BookingsSyncService bookingSyncService;
+
+    public BookingController(
+            BookingService bookingService,
+            FileProcessingService fileProcessingService,
+            BookingsSyncService bookingSyncService
+    ) {
+        this.bookingService = bookingService;
+        this.fileProcessingService = fileProcessingService;
+        this.bookingSyncService = bookingSyncService;
+    }
 
 
     @GetMapping
     public List<Booking> getAllBookings() {
         return bookingService.getAllBookings();
     }
+
 
     @GetMapping("/{id}")
     public Booking getBooking(@PathVariable Long id) {
@@ -62,38 +76,23 @@ public class BookingController {
     @Autowired
     private RestTemplate restTemplate;
 
-    @PostMapping("/{id}/sync")
-    public Booking syncWithApi(@PathVariable Long id) {
-        Booking booking = bookingRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Booking not found"));
-
-        if (booking.getDriver() == null || booking.getDriver().getId() == null) {
-            throw new IllegalStateException("Booking must have driver and vehicle assigned");
-        }
-
-        // Prepare payload for external API
-        Map<String, Object> payload = Map.of(
-                "bookingNumber", booking.getBookingNumber(),
-                "startTime", booking.getStartTime(),
-                "destination", booking.getDestination(),
-                "driverId", booking.getDriver().getId()
-        );
-
-        // Send to external API
-        ResponseEntity<String> response = restTemplate.postForEntity(
-                "https://external-api.com/bookings", payload, String.class);
-
-        if (response.getStatusCode().is2xxSuccessful()) {
-            booking.setSyncedWithApi(true);
-            booking.setUpdatedAt(LocalDateTime.now());
-            return bookingRepository.save(booking);
-        } else {
-            throw new RuntimeException("Failed to sync with external API");
-        }
-    }
+//    @PutMapping("/{id}/sync")
+//    public ResponseEntity<Booking> syncWithApi(@PathVariable Long id) {
+//        try {
+//            Booking syncedBooking = bookingSyncService.syncSingleBooking(id);
+//            return ResponseEntity.ok(syncedBooking);
+//        } catch (IllegalArgumentException e) {
+//            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+//        } catch (ExternalApiException e) {
+//            return ResponseEntity.status(HttpStatus.BAD_GATEWAY).build();
+//        } catch (RuntimeException e) {
+//            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+//        }
+//    }
 
     @PostMapping("/upload")
     public ResponseEntity<Map<String, Object>> uploadFile(@RequestParam("file") MultipartFile file) {
+
         try {
             List<Booking> bookings = fileProcessingService.processExcelFile(file);
             return ResponseEntity.ok(Map.of(
@@ -110,5 +109,23 @@ public class BookingController {
     @GetMapping("/unsynced")
     public List<Booking> getUnsyncedBookings() {
         return bookingService.getUnsyncedBookings();
+    }
+
+    @PutMapping("/bulk-sync")
+    public ResponseEntity<List<Booking>> bulkSync(@RequestBody List<Long> ids) {
+        List<Booking> syncedBookings = bookingSyncService.syncMultipleBookings(ids);
+        return ResponseEntity.ok(syncedBookings);
+    }
+
+    @PostMapping("/bulk-delete")
+    public ResponseEntity<?> bulkDelete(@RequestBody List<Long> ids) {
+        try {
+            bookingService.deleteMultipleBookings(ids);
+            return ResponseEntity.ok(Map.of("success", true));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", e.getMessage()));
+        }
     }
 }

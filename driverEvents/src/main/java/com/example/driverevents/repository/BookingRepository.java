@@ -17,8 +17,9 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     List<Booking> findByStartTimeBetween(LocalDateTime start, LocalDateTime end);
     List<Booking> findBySyncedWithApi(boolean syncedWithApi);
 
-//    List<Booking> findById(Long id);
+    void deleteAllByIdIn(List<Long> ids);
 
+//    List<Booking> findById(Long id);
 
     @Query(value = "SELECT * FROM bookings b WHERE b.driver_id = :driverId " +
             "AND :timestamp BETWEEN b.start_time AND b.start_time + interval '30 minutes'",

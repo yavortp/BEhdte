@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { format } from 'date-fns';
+import {format, parse} from 'date-fns';
 import {
     Clock, MapPin, Truck, User, Calendar, CheckCircle, XCircle, AlertTriangle,
     Edit, Trash2, ArrowLeft, Save, X
@@ -35,6 +35,27 @@ const BookingDetails: React.FC = () => {
 
     const { register, handleSubmit, reset, formState: { errors } } = useForm();
 
+    const normalizeBookingTime = (timeStr: string | null | undefined): string | null => {
+        if (!timeStr) return null;
+        try {
+            const [h, m] = timeStr.split(':');
+            if (h && m) return `${h.padStart(2, '0')}:${m.padStart(2, '0')}`;
+        } catch {
+            return null;
+        }
+        return null;
+    };
+
+    const normalizeBookingDate = (dateStr: string | null | undefined): string | null => {
+        if (!dateStr) return null;
+        try {
+            const parsed = parse(dateStr, 'dd/MM/yyyy', new Date());
+            return format(parsed, 'dd.MM.yyyy'); // backend expects dd.MM.yyyy
+        } catch {
+            return null;
+        }
+    };
+
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -56,7 +77,8 @@ const BookingDetails: React.FC = () => {
                 // Initialize form with current values
                 reset({
                     destination: bookingData.destination,
-                    startTime: new Date(bookingData.startTime).toISOString().slice(0, 16),
+                    startTime: normalizeBookingTime(bookingData.startTime),
+                    bookingDate: normalizeBookingDate(bookingData.bookingDate),
                     driverId: bookingData.driverId || 'error',
                     vehicleId: bookingData.vehicleId || '',
                     notes: bookingData.notes || '',
@@ -82,7 +104,8 @@ const BookingDetails: React.FC = () => {
         if (booking) {
             reset({
                 destination: booking.destination,
-                startTime: new Date(booking.startTime).toISOString().slice(0, 16),
+                startTime: normalizeBookingTime(booking.startTime),
+                bookingDate: normalizeBookingDate(booking.bookingDate),
                 driverId: booking.driverId || '',
                 vehicleId: booking.vehicleId || '',
                 notes: booking.notes || '',
@@ -95,13 +118,27 @@ const BookingDetails: React.FC = () => {
 
         setIsSaving(true);
         try {
+
+            let selectedDriver = null;
+            let driverName = booking.driverName;
+
+            if (data.driverId && data.driverId !== booking.driverId?.toString()) {
+                selectedDriver = drivers.find((d) => d.id.toString() === data.driverId.toString());
+                if (selectedDriver) {
+                    driverName = selectedDriver.name;
+                }
+            }
+
+            const formattedBookingDate = data.bookingDate
+                ? format(parse(data.bookingDate, 'dd/MM/yyyy', new Date()), 'dd.MM.yyyy')
+                : booking.bookingDate;
+
             const updatedBooking = await updateBooking(id, {
                 ...booking,
-                destination: data.destination,
-                startTime: new Date(data.startTime).toISOString(),
-                driverId: data.driverId || null,
-                driverName: data.driverName,
-                vehicleId: data.vehicleId || null,
+                destination: data.destination.toUpperCase(),
+                startTime: normalizeBookingTime(data.startTime),
+                bookingDate: formattedBookingDate,
+                driverName: driverName,
                 notes: data.notes || '',
                 syncedWithApi: false, // Mark as needing sync after update
             });
@@ -190,11 +227,12 @@ const BookingDetails: React.FC = () => {
                 <div className="flex items-center">
                     <button
                         onClick={handleBack}
-                        className="inline-flex items-center mr-3 text-gray-500 hover:text-gray-700"
+                        className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                     >
-                        <ArrowLeft className="h-5 w-5" />
+                        <ArrowLeft className="h-4 w-4 mr-1" />
+                        Back
                     </button>
-                    <h2 className="text-2xl font-bold text-gray-800">
+                    <h2 className="ml-4 text-2xl font-bold text-gray-800">
                         Booking #{booking.bookingNumber}
                     </h2>
                     {booking.syncedWithApi ? (
@@ -294,18 +332,52 @@ const BookingDetails: React.FC = () => {
                             <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
                                 <div className="sm:col-span-3">
                                     <label htmlFor="startTime" className="block text-sm font-medium text-gray-700">
-                                        Start Time
+                                        Start Time (HH:mm)
                                     </label>
                                     <div className="mt-1">
                                         <input
-                                            type="datetime-local"
+                                            type="text"
                                             id="startTime"
-                                            {...register('startTime', { required: 'Start time is required' })}
-                                            className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                                            placeholder="HH:mm"
+                                            {...register('startTime', {
+                                                pattern: {
+                                                    value: /^([01]\d|2[0-3]):([0-5]\d)$/,
+                                                    message: 'Time must be in HH:mm format (24h)',
+                                                },
+                                            })}
+                                            className="border border-gray-300 rounded-md shadow-sm w-full px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+
                                         />
                                         {errors.startTime && (
                                             <p className="mt-1 text-sm text-red-600">
                                                 {errors.startTime.message as string}
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="sm:col-span-3">
+                                    <label htmlFor="bookingDate" className="block text-sm font-medium text-gray-700">
+                                        Booking Date (dd/MM/yyyy)
+                                    </label>
+                                    <div className="mt-1">
+                                        <input
+                                            type="text"
+                                            id="bookingDate"
+                                            placeholder="dd/MM/yyyy"
+                                            {...register('bookingDate', {
+                                                pattern: {
+                                                    value: /^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/,
+                                                    message: 'Date must be in DD/MM/YYYY format',
+                                                },
+                                            })}
+                                            className="border border-gray-300 rounded-md shadow-sm w-full px-3 py-2
+                 focus:outline-none focus:ring-2 focus:ring-blue-500
+                 focus:border-blue-500 sm:text-sm"
+                                        />
+                                        {errors.bookingDate && (
+                                            <p className="mt-1 text-sm text-red-600">
+                                                {errors.bookingDate.message as string}
                                             </p>
                                         )}
                                     </div>
@@ -320,7 +392,8 @@ const BookingDetails: React.FC = () => {
                                             type="text"
                                             id="destination"
                                             {...register('destination', { required: 'Destination is required' })}
-                                            className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                                            className="border border-gray-300 rounded-md shadow-sm w-full px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+
                                         />
                                         {errors.destination && (
                                             <p className="mt-1 text-sm text-red-600">
@@ -338,32 +411,13 @@ const BookingDetails: React.FC = () => {
                                         <select
                                             id="driverId"
                                             {...register('driverId')}
-                                            className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                                            className="border border-gray-300 rounded-md shadow-sm w-full px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+
                                         >
                                             <option value="">-- Select Driver --</option>
                                             {drivers.map((driver) => (
                                                 <option key={driver.id} value={driver.id}>
                                                     {driver.name}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div className="sm:col-span-3">
-                                    <label htmlFor="vehicleId" className="block text-sm font-medium text-gray-700">
-                                        Vehicle
-                                    </label>
-                                    <div className="mt-1">
-                                        <select
-                                            id="vehicleId"
-                                            {...register('vehicleId')}
-                                            className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                                        >
-                                            <option value="">-- Select Vehicle --</option>
-                                            {vehicles.map((vehicle) => (
-                                                <option key={vehicle.id} value={vehicle.id}>
-                                                    {vehicle.registrationNumber} - {vehicle.model}
                                                 </option>
                                             ))}
                                         </select>
@@ -379,7 +433,8 @@ const BookingDetails: React.FC = () => {
                         id="notes"
                         {...register('notes')}
                         rows={3}
-                        className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                        className="border border-gray-300 rounded-md shadow-sm w-full px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+
                         placeholder="Add any additional notes about this booking..."
                     />
                                     </div>
@@ -409,7 +464,9 @@ const BookingDetails: React.FC = () => {
                                                 Start Time
                                             </dt>
                                             <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                                                {format(new Date(booking.startTime), 'PPP p')}
+                                                {booking.startTime
+                                                    ? booking.startTime.slice(0, 5) // display type - "20:00"
+                                                    : '—'}
                                             </dd>
                                         </div>
                                         <div className="py-4 sm:grid sm:grid-cols-3 sm:gap-4">
@@ -418,7 +475,7 @@ const BookingDetails: React.FC = () => {
                                                 Destination
                                             </dt>
                                             <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                                                {booking.destination}
+                                                {booking.destination.toUpperCase()}
                                             </dd>
                                         </div>
                                         {booking.notes && (
@@ -435,12 +492,12 @@ const BookingDetails: React.FC = () => {
                                                 {booking.syncedWithApi ? (
                                                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                             <CheckCircle className="h-3 w-3 mr-1" />
-                            Synchronized
+                            Synced
                           </span>
                                                 ) : (
                                                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
                             <XCircle className="h-3 w-3 mr-1" />
-                            Not Synchronized
+                            Not Synced
                           </span>
                                                 )}
                                             </dd>
@@ -459,14 +516,13 @@ const BookingDetails: React.FC = () => {
                                                 Driver
                                             </dt>
                                             <dd className="mt-1 text-sm sm:mt-0 sm:col-span-2">
-                                                {booking.driverId ? (
+                                                {booking.driverName ? (
                                                     <div className="flex items-center">
                                                         <div className="h-9 w-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-700 text-sm font-medium mr-2">
-                                                            {booking.driverName?.charAt(0) || 'D'}
+                                                            {booking.driverName.charAt(0) || 'Driver Name?'}
                                                         </div>
                                                         <div>
                                                             <p className="text-sm font-medium text-gray-900">{booking.driverName}</p>
-                                                            <p className="text-xs text-gray-500">ID: {booking.driverId}</p>
                                                         </div>
                                                     </div>
                                                 ) : (
@@ -484,16 +540,13 @@ const BookingDetails: React.FC = () => {
                                                 Vehicle
                                             </dt>
                                             <dd className="mt-1 text-sm sm:mt-0 sm:col-span-2">
-                                                {booking.vehicleId ? (
+                                                {booking.vehicleNumber ? (
                                                     <div className="flex items-center">
                                                         <div className="h-9 w-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-700 text-sm font-medium mr-2">
                                                             <Truck className="h-5 w-5" />
                                                         </div>
                                                         <div>
-                                                            <p className="text-sm font-medium text-gray-900">{booking.vehicleNumber}</p>
-                                                            {booking.vehicleModel && (
-                                                                <p className="text-xs text-gray-500">{booking.vehicleModel}</p>
-                                                            )}
+                                                            <p className="text-sm font-medium text-gray-900">{booking.vehicleNumber || 'missing'}</p>
                                                         </div>
                                                     </div>
                                                 ) : (

@@ -17,7 +17,7 @@ const Header: React.FC = () => {
                         >
                             <Menu size={24} />
                         </button>
-                        <h1 className="text-xl font-semibold text-gray-800 hidden md:block">Booking Management System</h1>
+                        <h1 className="text-xl font-semibold text-gray-800 hidden md:block">Bookings Management System</h1>
                     </div>
 
                     <div className="flex items-center space-x-4">

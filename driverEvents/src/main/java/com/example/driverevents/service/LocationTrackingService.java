@@ -2,21 +2,17 @@ package com.example.driverevents.service;
 
 import com.example.driverevents.model.Booking;
 import com.example.driverevents.model.Driver;
-import com.example.driverevents.model.LocationUpdate;
+import com.example.driverevents.model.LocationUpdateFromDrivers;
 import com.example.driverevents.model.Vehicle;
 import com.example.driverevents.repository.BookingRepository;
 import com.example.driverevents.repository.DriverRepository;
 import com.example.driverevents.repository.LocationUpdateRepository;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.kafka.annotation.KafkaListener;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-
 import java.time.LocalDateTime;
-import java.util.List;
+import java.time.OffsetDateTime;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -24,7 +20,6 @@ import java.util.concurrent.ConcurrentHashMap;
 @RequiredArgsConstructor
 public class LocationTrackingService {
 
-    private final KafkaTemplate<String, Object> kafkaTemplate;
     private final SimpMessagingTemplate websocket;
     private final BookingRepository bookingRepository;
     private final DriverRepository driverRepository;
@@ -36,29 +31,39 @@ public class LocationTrackingService {
 
     @KafkaListener(topics = "driver-locations", groupId = "location-tracking-group")
     public void handleLocationUpdate(Map<String, Object> locationData) {
-        String driverEmail = (String) locationData.get("driverEmail");
+        String driverEmail = (String) locationData.get("username");
         Double latitude = (Double) locationData.get("latitude");
         Double longitude = (Double) locationData.get("longitude");
-        LocalDateTime timestamp = LocalDateTime.parse((String) locationData.get("timestamp"));
+        OffsetDateTime timestampWithOffset = OffsetDateTime.parse((String) locationData.get("timestamp"));
+        System.out.println("OFFSET TIME" + timestampWithOffset);
+//        LocalDateTime timestamp = LocalDateTime.parse((String) locationData.get("timestamp"));
+        LocalDateTime timestamp = timestampWithOffset.toLocalDateTime();
 
-        Driver driver = driverRepository.findByEmail(driverEmail);              //set error handling here for driver and vehicle!!!
+        System.out.println("- location tracking service - Timestamp: " + timestamp);
+
+        Driver driver = driverRepository.findByEmail(driverEmail);
+        if (driver == null) {
+            System.err.println("No driver found for email: " + driverEmail);
+            return;
+        }
+
         Vehicle vehicle = driver.getVehicles();
-        String vehRegNum = vehicle.getRegistrationNumber();
+        if (vehicle == null) {
+            System.err.println("No vehicle assigned to driver: " + driverEmail);
+            return;
+        }
 
         // find active booking for this driver
         Booking activeBooking = bookingRepository.findActiveBookingForDriver(driver.getId(), timestamp).orElse(null);
 
-        String bookingNumber = activeBooking != null ? activeBooking.getBookingNumber() : null;
-
-        // save location update
-        LocationUpdate update = new LocationUpdate();
-        update.setBooking(activeBooking);
+        // save location update to db
+        LocationUpdateFromDrivers update = new LocationUpdateFromDrivers();
+        update.setUsername(driver.getEmail());
         update.setLatitude(latitude);
         update.setLongitude(longitude);
         update.setTimestamp(timestamp);
-        update.setSentToExternalApi(false);
-        update.setVehicleRegNumber(vehRegNum);
-        update.setBookingNumber(bookingNumber);
+        update.setSentToApi(false);
+
         locationUpdateRepository.save(update);
 
         // send to websocket if connection is active
@@ -68,27 +73,12 @@ public class LocationTrackingService {
 
         // if there is an active booking send to external API
         if (activeBooking != null) {
-            kafkaTemplate.send("external-api-updates", Map.of("bookingId", activeBooking.getId(), "locationUpdate", update));
-        }
-    }
-
-    @Scheduled(fixedRate = 15000)
-    @Transactional
-    public void processExternalApiUpdates() {
-        LocalDateTime now = LocalDateTime.now();
-        List<Booking> activeBookings = bookingRepository.findBookingsForLocationUpdates(now);
-
-        for (Booking booking : activeBookings) {
-            List<LocationUpdate> updates = locationUpdateRepository.findUnsentUpdatesByBooking(booking.getId());
-
-            for (LocationUpdate update : updates) {
-                try {
-                    externalApiService.sendLocationUpdate(update);
-                    update.setSentToExternalApi(true);
-                    locationUpdateRepository.save(update);
-                } catch (Exception e) {
-                    System.err.println("Failed to send location update: "+ e.getMessage());
-                }
+            try {
+                externalApiService.sendLocationUpdate(activeBooking, update);
+                update.setSentToApi(true);
+                locationUpdateRepository.save(update);
+            } catch (Exception e) {
+                System.err.println("Failed to send location update to external API: " + e.getMessage());
             }
         }
     }
@@ -101,60 +91,5 @@ public class LocationTrackingService {
         activeConnections.remove(driverEmail);
     }
 
-
-    }
-
-//    @Transactional
-//    public void processLocationUpdate(String driverName, Double latitude, Double longitude, LocalDateTime timestamp, String bookingStatus) {
-//        // Find active bookings for the driver
-//        List<Booking> activeBookings = bookingRepository.findActiveBookinsByDriverName(driverName);
-//
-//        for (Booking booking : activeBookings) {
-//            LocationUpdate update = new LocationUpdate();
-//            update.setBooking(booking);
-//            update.setLatitude(latitude);
-//            update.setLongitude(longitude);
-//            update.setTimestamp(timestamp);
-//            update.setSentToApi(false);
-//
-//            locationUpdateRepository.save(update);
-//
-//            if (booking.getStatus() == Booking.BookingStatus.BEFORE_PICKUP) {
-//                booking.setStatus(Booking.BookingStatus.AFTER_PICKUP);
-//                bookingRepository.save(booking);
-//            }
-//
-//        }
-//    }
-//
-//    @Scheduled(fixedRate = 30000)
-//    @Transactional
-//    public void syncLocationUpdates() {
-//        List<LocationUpdate> pendingUpdates = locationUpdateRepository.findBySentToApiFalse();
-//
-//        for (LocationUpdate update: pendingUpdates) {
-//            try {
-//                externalApiService.sendLocationUpdate(update);
-//                update.setSentToApi(true);
-//                locationUpdateRepository.save(update);
-//            } catch (Exception e) {
-//                // Log error but continue with other updates
-//                System.err.println("Failed to sync location update: " + e.getMessage());
-//            }
-//        }
-//    }
-//
-//    @Scheduled(fixedRate = 60000)
-//    @Transactional
-//    public void checkBookingCompletions() {
-//        List<Booking> inProgressBookings = bookingRepository.findByStatus(Booking.BookingStatus.AFTER_PICKUP);
-//        for (Booking booking : inProgressBookings) {
-//            //Get latest location
-//            LocationUpdate latestLocation = locationUpdateRepository.findFirstByBookingOrderByTimestampDesc(booking).orElse(null);
-//
-//            if (latestLocation != null) {
-//
-//            }
-//        }
-//    }
+}
 

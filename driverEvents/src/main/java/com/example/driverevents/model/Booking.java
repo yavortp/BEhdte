@@ -1,12 +1,9 @@
 package com.example.driverevents.model;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
-
-import java.sql.Time;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.Date;
-
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -30,14 +27,19 @@ public class Booking {
 
     private String driverName;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "vehicle_id", nullable = true)
     private Vehicle vehicle;
 
+    private String vehicleNumber;
+
+    @NotNull
     private String bookingDate;
 
     @NotNull
-    private LocalDateTime startTime;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm")
+    @Column(name = "start_time")
+    private LocalTime startTime;
 
     @NotBlank
     private String startLocation;
@@ -81,4 +83,9 @@ public class Booking {
         AFTER_PICKUP,
         COMPLETED
     }
+
+    public Boolean getSyncedWithApi() {
+        return syncedWithApi;
+    }
+
 }
