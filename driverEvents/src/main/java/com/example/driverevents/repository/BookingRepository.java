@@ -16,21 +16,23 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     Optional<Booking> findByBookingNumber(String bookingNumber);
     List<Booking> findByStartTimeBetween(LocalDateTime start, LocalDateTime end);
     List<Booking> findBySyncedWithApi(boolean syncedWithApi);
-
     void deleteAllByIdIn(List<Long> ids);
 
-//    List<Booking> findById(Long id);
-
-    @Query(value = "SELECT * FROM bookings b WHERE b.driver_id = :driverId " +
-            "AND :timestamp BETWEEN b.start_time AND b.start_time + interval '30 minutes'",
-            nativeQuery = true)
+    @Query(value = """
+        SELECT b.* FROM bookings b 
+        WHERE b.driver_id = :driverId 
+        AND :timestamp BETWEEN 
+            (b.booking_date::date + b.start_time - interval '30 minutes') AND 
+            (b.booking_date::date + b.start_time + interval '2 hours')
+        LIMIT 1
+        """, nativeQuery = true)
     Optional<Booking> findActiveBookingForDriver(@Param("driverId") Long driverId,
                                                  @Param("timestamp") LocalDateTime timestamp);
 
-    @Query(value = "SELECT * FROM bookings b WHERE " +
-            "b.start_time BETWEEN :now AND :now + interval '30 minutes' " +
-            "OR :now BETWEEN b.start_time - interval '30 minutes' AND b.start_time + interval '30 minutes'",
-            nativeQuery = true)
-    List<Booking> findBookingsForLocationUpdates(@Param("now") LocalDateTime now);
+//    @Query(value = "SELECT * FROM bookings b WHERE " +
+//            "b.start_time BETWEEN :now AND :now + interval '30 minutes' " +
+//            "OR :now BETWEEN b.start_time - interval '30 minutes' AND b.start_time + interval '30 minutes'",
+//            nativeQuery = true)
+//    List<Booking> findBookingsForLocationUpdates(@Param("now") LocalDateTime now);
 
 }

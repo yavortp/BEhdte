@@ -7,6 +7,7 @@ import com.example.driverevents.repository.BookingRepository;
 import com.example.driverevents.repository.SentLocationsToExternalApiRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -18,6 +19,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ExternalApiService {
@@ -104,7 +106,8 @@ public class ExternalApiService {
             loc.put("lng", location.getLongitude());
             payload.put("location", loc);
 
-            System.out.println("- external api service - PAYLOAD:\n" + payload);
+//            System.out.println("- external api service - PAYLOAD:\n" + payload);
+            log.info("- external api service - PAYLOAD:\n" + payload);
 
             sentLocationsToExternalApiRepository.markAsSent(location.getId());   // delete after testing! just checking if db flag sets to true
 
@@ -117,17 +120,19 @@ public class ExternalApiService {
             ResponseEntity<String> response = restTemplate.postForEntity(url, entity, String.class);
 
             if (response.getStatusCode().is2xxSuccessful()) {
-                System.out.println("Sent location for booking " +
-                        booking.getBookingNumber() + " vehicle " + booking.getVehicle().getRegistrationNumber());
+//                System.out.println("Sent location for booking " + booking.getBookingNumber() + " vehicle " + booking.getVehicle().getRegistrationNumber());
+                log.info("Sent location for booking " + booking.getBookingNumber() + " vehicle " + booking.getVehicle().getRegistrationNumber());
 
                 sentLocationsToExternalApiRepository.markAsSent(location.getId());
 
             } else {
-                System.out.println("Failed to send location. Status: " + response.getStatusCode());
+//                System.out.println("Failed to send location. Status: " + response.getStatusCode());
+                log.error("Failed to send location. Status: " + response.getStatusCode());
             }
 
         } catch (Exception e) {
-            System.out.println("Error sending location to external API for booking " + booking.getBookingNumber() + " - " + e);
+//            System.out.println("Error sending location to external API for booking " + booking.getBookingNumber() + " - " + e);
+            log.error("Failed to send location update for booking: {} - Error: {}", booking.getBookingNumber(), e.getMessage(), e);
         }
     }
 }

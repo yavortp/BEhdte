@@ -1,105 +1,98 @@
 package com.example.driverevents.controller;
 
-import com.example.driverevents.ExternalApiException;
 import com.example.driverevents.model.Booking;
-import com.example.driverevents.repository.BookingRepository;
 import com.example.driverevents.service.BookingService;
 import com.example.driverevents.service.BookingsSyncService;
 import com.example.driverevents.service.FileProcessingService;
-import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
-@Service
+@Slf4j
 @RestController
 @RequestMapping("/api/bookings")
 @CrossOrigin(origins = "*")
+@RequiredArgsConstructor
 public class BookingController {
+
     private final BookingService bookingService;
     private final FileProcessingService fileProcessingService;
     private final BookingsSyncService bookingSyncService;
 
-    public BookingController(
-            BookingService bookingService,
-            FileProcessingService fileProcessingService,
-            BookingsSyncService bookingSyncService
-    ) {
-        this.bookingService = bookingService;
-        this.fileProcessingService = fileProcessingService;
-        this.bookingSyncService = bookingSyncService;
-    }
-
-
     @GetMapping
-    public List<Booking> getAllBookings() {
-        return bookingService.getAllBookings();
+    public ResponseEntity<List<Booking>> getAllBookings() {
+        log.info("Fetching all bookings");
+        List<Booking> bookings = bookingService.getAllBookings();
+        log.info("Retrieved {} bookings", bookings.size());
+        return ResponseEntity.ok(bookings);
     }
-
 
     @GetMapping("/{id}")
-    public Booking getBooking(@PathVariable Long id) {
-        return bookingService.getBookingById(id);
+    public ResponseEntity<Booking> getBooking(@PathVariable Long id) {
+        log.info("Fetching booking with id: {}", id);
+        Booking booking = bookingService.getBookingById(id);
+        return ResponseEntity.ok(booking);
     }
 
     @PostMapping
-    public Booking createBooking(@Valid @RequestBody Booking booking) {
-        return bookingService.createBooking(booking);
+    public ResponseEntity<Booking> createBooking(@Valid @RequestBody Booking booking) {
+        log.info("Creating new booking: {}", booking.getBookingNumber());
+        Booking createdBooking = bookingService.createBooking(booking);
+        log.info("Successfully created booking with id: {}", createdBooking.getId());
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdBooking);
     }
 
     @PutMapping("/{id}")
-    public Booking updateBooking(@PathVariable Long id, @Valid @RequestBody Booking booking) {
-        return bookingService.updateBooking(id, booking);
+    public ResponseEntity<Booking> updateBooking(@PathVariable Long id, @Valid @RequestBody Booking booking) {
+        log.info("Updating booking with id: {}", id);
+        Booking updatedBooking = bookingService.updateBooking(id, booking);
+        log.info("Successfully updated booking with id: {}", id);
+        return ResponseEntity.ok(updatedBooking);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteBooking(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteBooking(@PathVariable Long id) {
+        log.info("Deleting booking with id: {}", id);
         bookingService.deleteBooking(id);
-        return ResponseEntity.ok().build();
+        log.info("Successfully deleted booking with id: {}", id);
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/{id}/assign-driver/{driverId}")
-    public Booking assignDriver(@PathVariable Long id, @PathVariable Long driverId) {
-        return bookingService.assignDriver(id, driverId);
+    public ResponseEntity<Booking> assignDriver(@PathVariable Long id, @PathVariable Long driverId) {
+        log.info("Assigning driver {} to booking {}", driverId, id);
+        Booking booking = bookingService.assignDriver(id, driverId);
+        log.info("Successfully assigned driver {} to booking {}", driverId, id);
+        return ResponseEntity.ok(booking);
     }
-
-    @Autowired
-    private RestTemplate restTemplate;
-
-//    @PutMapping("/{id}/sync")
-//    public ResponseEntity<Booking> syncWithApi(@PathVariable Long id) {
-//        try {
-//            Booking syncedBooking = bookingSyncService.syncSingleBooking(id);
-//            return ResponseEntity.ok(syncedBooking);
-//        } catch (IllegalArgumentException e) {
-//            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-//        } catch (ExternalApiException e) {
-//            return ResponseEntity.status(HttpStatus.BAD_GATEWAY).build();
-//        } catch (RuntimeException e) {
-//            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-//        }
-//    }
 
     @PostMapping("/upload")
     public ResponseEntity<Map<String, Object>> uploadFile(@RequestParam("file") MultipartFile file) {
+        log.info("Processing file upload: {}", file.getOriginalFilename());
+
+        if (file.isEmpty()) {
+            log.warn("Attempted to upload empty file");
+            return ResponseEntity.badRequest().body(Map.of("error", "File is empty"));
+        }
 
         try {
             List<Booking> bookings = fileProcessingService.processExcelFile(file);
+            log.info("Successfully processed file: {} bookings created/updated", bookings.size());
             return ResponseEntity.ok(Map.of(
                     "message", "File processed successfully",
                     "bookingsCreated", bookings.size()
             ));
         } catch (IOException e) {
+            log.error("Failed to process file: {} - Error: {}", file.getOriginalFilename(), e.getMessage(), e);
             return ResponseEntity.badRequest().body(Map.of(
                     "error", "Failed to process file: " + e.getMessage()
             ));
@@ -107,23 +100,30 @@ public class BookingController {
     }
 
     @GetMapping("/unsynced")
-    public List<Booking> getUnsyncedBookings() {
-        return bookingService.getUnsyncedBookings();
+    public ResponseEntity<List<Booking>> getUnsyncedBookings() {
+        log.info("Fetching unsynced bookings");
+        List<Booking> bookings = bookingService.getUnsyncedBookings();
+        log.info("Found {} unsynced bookings", bookings.size());
+        return ResponseEntity.ok(bookings);
     }
 
     @PutMapping("/bulk-sync")
     public ResponseEntity<List<Booking>> bulkSync(@RequestBody List<Long> ids) {
+        log.info("Starting bulk sync for {} bookings", ids.size());
         List<Booking> syncedBookings = bookingSyncService.syncMultipleBookings(ids);
+        log.info("Successfully synced {}/{} bookings", syncedBookings.size(), ids.size());
         return ResponseEntity.ok(syncedBookings);
     }
 
     @PostMapping("/bulk-delete")
     public ResponseEntity<?> bulkDelete(@RequestBody List<Long> ids) {
+        log.info("Starting bulk delete for {} bookings", ids.size());
         try {
             bookingService.deleteMultipleBookings(ids);
+            log.info("Successfully deleted {} bookings", ids.size());
             return ResponseEntity.ok(Map.of("success", true));
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Failed to delete bookings: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", e.getMessage()));
         }
