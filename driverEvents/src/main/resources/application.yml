@@ -1,38 +1,48 @@
 spring:
+#  profiles:
+#    active: prod
   datasource:
     url: jdbc:postgresql://localhost:5432/bookingdb
     username: postgres
     password: 4akaiMalko
+#  hikari:
+#    connection-timeout: 20000
+#    maximum-pool-size: 20
+#    minimum-idle: 5
+#    idle-timeout: 600000
+#    max-lifetime: 1800000
+#    leak-detection-threshold: 60000
   jpa:
     hibernate:
       ddl-auto: update
     show-sql: true
+    #        ddl-auto: validate  # Never auto-update in production
+    #        show-sql: false       # Disable SQL logging in production
     properties:
       hibernate:
+        jdbc.batch_size: 20
         format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  kafka:
+    bootstrap-servers: localhost:9092
+
   servlet:
     multipart:
       enabled: true
       max-file-size: 10MB
       max-request-size: 10MB
-  kafka:
-    bootstrap-servers: localhost:9092
 
 server:
   port: 8080
   error:
     include-message: always
     include-binding-errors: always
+#    include-message: never
+#    include-binding-errors: never
+#    include-stacktrace: never
 
 api:
   external:
     base-url: https://api.example.com/v1
     timeout: 5000
-
-excel:
-  test-data:
-    bookings: src/main/resources/test-data/bookings.xlsx
-    drivers: src/main/resources/test-data/drivers.xlsx
-    destinations: src/main/resources/test-data/destinations.xlsx
-    vehicles: src/main/resources/test-data/vehicles.xlsx
