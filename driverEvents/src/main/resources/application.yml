@@ -1,23 +1,17 @@
 spring:
-#  profiles:
-#    active: prod
+  application:
+    name: driverEvents
+
   datasource:
     url: jdbc:postgresql://localhost:5432/bookingdb
     username: postgres
     password: 4akaiMalko
-#  hikari:
-#    connection-timeout: 20000
-#    maximum-pool-size: 20
-#    minimum-idle: 5
-#    idle-timeout: 600000
-#    max-lifetime: 1800000
-#    leak-detection-threshold: 60000
+    driver-class-name: org.postgresql.Driver
+
   jpa:
     hibernate:
       ddl-auto: update
     show-sql: true
-    #        ddl-auto: validate  # Never auto-update in production
-    #        show-sql: false       # Disable SQL logging in production
     properties:
       hibernate:
         jdbc.batch_size: 20
@@ -38,11 +32,24 @@ server:
   error:
     include-message: always
     include-binding-errors: always
-#    include-message: never
-#    include-binding-errors: never
-#    include-stacktrace: never
+    include-stacktrace: always
+
+# Firebase config
+firebase:
+  config:
+    path: src/main/resources/firebase-service-account.json
 
 api:
   external:
-    base-url: https://api.example.com/v1
-    timeout: 5000
+    base-url: https://suppliers.htxstaging.com
+    api-key: dev-test-key-12345
+    header-name: Authorization
+    header-prefix: Bearer
+    timeout: 10000
+
+logging:
+  level:
+    root: INFO
+    com.example.driverevents: DEBUG
+    org.springframework.web: DEBUG
+    org.hibernate: DEBUG
