@@ -1,14 +1,30 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-// https://vitejs.dev/config/
 export default defineConfig({
     plugins: [react()],
+
+    build: {
+        outDir: 'dist',
+        assetsDir: 'assets',
+        sourcemap: false,
+        minify: 'esbuild',
+        rollupOptions: {
+            output: {
+                manualChunks: {
+                    'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+                    'firebase-vendor': ['firebase', 'firebaseui'],
+                    'map-vendor': ['leaflet', 'react-leaflet'],
+                }
+            }
+        }
+    },
+
     optimizeDeps: {
         exclude: ['lucide-react'],
     },
     define: {
-        global: {},
+        global: 'globalThis',
     },
     resolve: {
         alias: {
@@ -16,12 +32,19 @@ export default defineConfig({
         }
     },
     server: {
+        port: 5173,
         proxy: {
             '/api': {
                 target: 'http://localhost:8080',    //BE server
                 changeOrigin: true,
                 secure: false,
             },
+            '/ws': {
+                target: 'http://localhost:8080',
+                changeOrigin: true,
+                secure: false,
+                ws: true,
+            }
         },
     },
 });
