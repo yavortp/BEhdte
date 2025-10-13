@@ -17,7 +17,8 @@ COPY src/ ./src/
 COPY package.json package-lock.json* ./
 COPY vite.config.ts tsconfig.app.json tsconfig.node.json ./
 COPY index.html postcss.config.js tailwind.config.js* ./
-COPY public/ ./public/ 2>/dev/null || true
+RUN mkdir -p ./public
+COPY public/ ./public/
 
 # Build the application (includes frontend build via frontend-maven-plugin)
 RUN ./mvnw clean package -DskipTests -B
