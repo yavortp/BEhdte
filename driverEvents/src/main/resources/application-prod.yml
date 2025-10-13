@@ -43,7 +43,7 @@ spring:
       max-request-size: 10MB
 
 server:
-  port: ${PORT:8080}
+  port: 8080
   error:
     include-message: never
     include-binding-errors: never
@@ -83,4 +83,6 @@ management:
         include: health,info,metrics
   endpoint:
     health:
-      show-details: when-authorized
+      show-details: never
+  server:
+    port: 8080
