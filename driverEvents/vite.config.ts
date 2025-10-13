@@ -13,7 +13,7 @@ export default defineConfig({
             output: {
                 manualChunks: {
                     'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-                    'firebase-vendor': ['firebase', 'firebaseui'],
+                    'firebase-vendor': ['firebase/app', 'firebase/auth', 'firebaseui'],
                     'map-vendor': ['leaflet', 'react-leaflet'],
                 }
             }
