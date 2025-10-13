@@ -54,15 +54,16 @@ public class FirebaseConfig {
 
             if (FirebaseApp.getApps().isEmpty()) {
                 FirebaseApp.initializeApp(options);
-                System.out.println("✅ Firebase initialized successfully");
+                System.out.println(" Firebase initialized successfully");
             } else {
-                System.out.println("✅ Firebase already initialized");
+                System.out.println(" Firebase already initialized");
             }
 
         } catch (IOException e) {
-            System.err.println("❌ Failed to initialize Firebase: " + e.getMessage());
+            System.err.println(" Failed to initialize Firebase: " + e.getMessage());
             e.printStackTrace();
 
+//            Put your assets inside public/ or move them from resources/static/ if needed
         }
     }
 }
