@@ -40,7 +40,7 @@ public class BookingsSyncService {
         }
 
         booking.setSyncedWithApi(true);
-        System.out.println("Returning booking: " + booking.getId() + ", synced=" + booking.getSyncedWithApi());
+//        System.out.println("Returning booking: " + booking.getId() + ", synced=" + booking.getSyncedWithApi());
 
         return booking;
     }
