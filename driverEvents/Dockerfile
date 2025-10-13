@@ -15,7 +15,7 @@ RUN ./mvnw dependency:go-offline -B || true
 # Copy all source files
 COPY src/ ./src/
 COPY package.json package-lock.json* ./
-COPY vite.config.ts tsconfig.json tsconfig.node.json ./
+COPY vite.config.ts tsconfig.app.json tsconfig.node.json ./
 COPY index.html postcss.config.js tailwind.config.js* ./
 COPY public/ ./public/ 2>/dev/null || true
 
