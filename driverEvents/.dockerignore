@@ -1,0 +1,41 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Build outputs
+target/
+dist/
+build/
+node_modules/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Documentation
+README.md
+HELP.md
+
+# Test files
+src/test/
+
+# Environment files
+.env
+.env.local
+.env.production.local
+
+# Firebase secrets
+firebase-service-account.json
+src/main/resources/firebase-service-account.json
