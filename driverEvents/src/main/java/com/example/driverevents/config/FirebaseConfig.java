@@ -17,7 +17,7 @@ import java.io.InputStream;
 @Configuration
 public class FirebaseConfig {
 
-    @Value("${firebase.config.path:firebase-service-account.json}")
+    @Value("${firebase.config.path:src/main/resources/firebase-service-account.json}")
     private String firebaseConfigPath;
 
     @Value("${firebase.credentials.json:}")
@@ -40,11 +40,18 @@ public class FirebaseConfig {
                 try {
                     // Try classpath first
                     ClassPathResource resource = new ClassPathResource(firebaseConfigPath);
-                    credentials = GoogleCredentials.fromStream(resource.getInputStream());
+                    if (resource.exists()) {
+                        credentials = GoogleCredentials.fromStream(resource.getInputStream());
+                    } else {
+                        // Try file system path (for local dev)
+                        FileInputStream serviceAccount = new FileInputStream(firebaseConfigPath);
+                        credentials = GoogleCredentials.fromStream(serviceAccount);
+                    }
                 } catch (Exception e) {
-                    // Fall back to file system
-                    FileInputStream serviceAccount = new FileInputStream(firebaseConfigPath);
-                    credentials = GoogleCredentials.fromStream(serviceAccount);
+                    System.err.println(" Firebase credentials file not found. Firebase features may not work.");
+                    System.err.println(" For local: Add firebase-service-account.json to src/main/resources/");
+                    System.err.println(" For production: Set FIREBASE_CREDENTIALS_JSON environment variable");
+                    return;
                 }
             }
 
@@ -63,7 +70,6 @@ public class FirebaseConfig {
             System.err.println(" Failed to initialize Firebase: " + e.getMessage());
             e.printStackTrace();
 
-//            Put your assets inside public/ or move them from resources/static/ if needed
         }
     }
 }
