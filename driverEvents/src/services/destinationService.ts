@@ -1,3 +1,5 @@
+import API_BASE_URL from '../config';
+
 export interface Destination {
     id: number;
     startLocation: string;
@@ -5,7 +7,7 @@ export interface Destination {
     durationMinutes: number;
 }
 
-const BASE_URL = 'http://localhost:8080/api/destinations';
+const BASE_URL = `${API_BASE_URL}/api/destinations`;
 
 export const fetchDestinations = async (): Promise<Destination[]> => {
     const response = await fetch(BASE_URL);
