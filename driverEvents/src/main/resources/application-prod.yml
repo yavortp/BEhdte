@@ -16,10 +16,15 @@ spring:
       leak-detection-threshold: 60000
       auto-commit: true
 
+  sql:
+    init:
+      mode: never
+
   jpa:
     hibernate:
       ddl-auto: validate  # Never auto-update in production
     show-sql: false
+    open-in-view: false
     properties:
       hibernate:
         jdbc.batch_size: 20
@@ -28,7 +33,7 @@ spring:
         temp.use_jdbc_metadata_defaults: false
 
   kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     producer:
       retries: 3
       acks: all
@@ -43,7 +48,8 @@ spring:
       max-request-size: 10MB
 
 server:
-  port: 8080
+  port: ${PORT:8080}
+  shutdown: graceful
   error:
     include-message: never
     include-binding-errors: never
@@ -70,9 +76,10 @@ firebase:
 logging:
   level:
     root: INFO
-    com.example.driverevents: INFO
-    org.springframework.web: WARN
+    com.example.driverevents: DEBUG
+    org.springframework.web: INFO
     org.hibernate: WARN
+    com.zaxxer.hikari: DEBUG
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
 
@@ -83,6 +90,11 @@ management:
         include: health,info,metrics
   endpoint:
     health:
-      show-details: never
-  server:
-    port: 8080
+      show-details: always
+      probes:
+        enabled: true
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
