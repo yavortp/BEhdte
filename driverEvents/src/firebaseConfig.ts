@@ -2,7 +2,7 @@ import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 
 const firebaseConfig = {
-    apiKey: process.env.FIREBASE_API_KEY!,
+    apiKey: "AIzaSyDNCoFChIdARlRHNA6cL-JQazGelTZbt0s",
     authDomain: "location-service-web-admin.firebaseapp.com",
     projectId: "location-service-web-admin",
     storageBucket: "location-service-web-admin.firebasestorage.app",
