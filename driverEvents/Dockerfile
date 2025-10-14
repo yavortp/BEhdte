@@ -50,6 +50,7 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=60s --retries=3 \
 ENTRYPOINT ["java", \
     "-Dspring.profiles.active=prod", \
     "-Dserver.port=${PORT:-8080}", \
+    "-Dserver.address=0.0.0.0", \
     "-Xmx384m", \
     "-Xms256m", \
     "-XX:+UseContainerSupport", \
