@@ -38,7 +38,7 @@ public class DriverController {
     }
 
     @GetMapping
-    @CrossOrigin(origins = "http://localhost:5173")
+    @CrossOrigin(origins = {"http://localhost:5173", "https://driverlocations.live"})
     public ResponseEntity<List<Driver>> getAllDrivers() {
         return ResponseEntity.ok(driverRepository.findAll());
     }
