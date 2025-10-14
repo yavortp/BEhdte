@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/vehicles")
+@RequestMapping("/vehicles")
 @RequiredArgsConstructor
 public class VehicleController {
 
@@ -27,7 +27,7 @@ public class VehicleController {
     }
 
     @GetMapping()
-    @CrossOrigin(origins = "http://localhost:5173")
+    @CrossOrigin(origins = {"http://localhost:5173", "https://driverlocations.live"})
     public List<Vehicle> getAllVehicles() {
         return vehicleRepository.findAll();
     }
