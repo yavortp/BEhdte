@@ -1,4 +1,3 @@
-import API_BASE_URL from '../config';
 export interface Driver {
     id: string;
     name: string;
@@ -26,7 +25,7 @@ export type DriverUpdatePayload = Partial<{
 // Service functions -  API calls
 
 export const createDriver = async (data: Driver): Promise<Driver> => {
-    const response = await fetch(`${API_BASE_URL}/api/drivers`, {
+    const response = await fetch(`/api/drivers`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -37,7 +36,7 @@ export const createDriver = async (data: Driver): Promise<Driver> => {
 };
 
 export const getDrivers = async (): Promise<Driver[]> => {
-    const response = await fetch(`${API_BASE_URL}/api/drivers`);
+    const response = await fetch(`/api/drivers`);
     if (!response.ok) throw new Error("Failed to fetch drivers");
     const data = await response.json();
 
@@ -53,7 +52,7 @@ export const getDrivers = async (): Promise<Driver[]> => {
 // };
 
 export const updateDriver = async (id: string, payload: DriverUpdatePayload): Promise<Driver> => {
-    const response = await fetch(`${API_BASE_URL}/api/drivers/${id}`, {
+    const response = await fetch(`/api/drivers/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -64,7 +63,7 @@ export const updateDriver = async (id: string, payload: DriverUpdatePayload): Pr
 };
 
 export const deleteDriver = async (id: string): Promise<void> => {
-    const response = await fetch(`${API_BASE_URL}/api/drivers/${id}`, {
+    const response = await fetch(`/api/drivers/${id}`, {
         method: 'DELETE',
     });
     if (!response.ok) throw new Error('Failed to delete driver');
