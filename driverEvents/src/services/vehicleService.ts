@@ -1,4 +1,3 @@
-import { getApiUrl } from '../config';
 export interface Vehicle {
     id: string;
     registrationNumber: string;
@@ -24,7 +23,7 @@ export const createVehicle = async (vehicle: {
     capacity: number;
     status: 'available' | 'in-use' ;
 }): Promise<Vehicle> => {
-    const response = await fetch(getApiUrl(`/api/vehicles`), {
+    const response = await fetch(`/api/vehicles`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(vehicle),
@@ -34,7 +33,7 @@ export const createVehicle = async (vehicle: {
 };
 
 export const getVehicles = async (): Promise<Vehicle[]> => {
-    const response = await fetch(getApiUrl(`/api/vehicles`));
+    const response = await fetch(`/api/vehicles`);
     if (!response.ok) throw new Error("Failed to fetch vehicles");
     const data = await response.json();
 
@@ -46,14 +45,14 @@ export const getVehicles = async (): Promise<Vehicle[]> => {
 };
 
 export const getVehicleById = async (id: string): Promise<Vehicle> => {
-    const response = await fetch(getApiUrl(`/api/vehicles/${id}`));
+    const response = await fetch(`/api/vehicles/${id}`);
     if (!response.ok) throw new Error("Vehicle not found");
     return await response.json();
 
 };
 
 export const getAvailableVehicles = async (): Promise<Vehicle[]> => {
-    const response = await fetch(getApiUrl(`/api/vehicles/available`));
+    const response = await fetch(`/api/vehicles/available`);
     if (!response.ok) {
         throw new Error("Failed to fetch available vehicles");
     }
@@ -62,7 +61,7 @@ export const getAvailableVehicles = async (): Promise<Vehicle[]> => {
 };
 
 export const updateVehicle = async (id: string, vehicle: Partial<Vehicle>): Promise<Vehicle> => {
-    const response = await fetch(getApiUrl(`/api/vehicles/${id}`), {
+    const response = await fetch(`/api/vehicles/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(vehicle),
@@ -73,7 +72,7 @@ export const updateVehicle = async (id: string, vehicle: Partial<Vehicle>): Prom
 
 
 export const updateVehicleStatus = async (id: string, status: "available" | "in-use"): Promise<Vehicle> => {
-    const response = await fetch(getApiUrl(`/api/vehicles/${id}`), {
+    const response = await fetch(`/api/vehicles/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status }),
@@ -84,7 +83,7 @@ export const updateVehicleStatus = async (id: string, status: "available" | "in-
 };
 
 export const deleteVehicle = async (id: string): Promise<void> => {
-    const response = await fetch(getApiUrl(`/api/vehicles/${id}`), {
+    const response = await fetch(`/api/vehicles/${id}`, {
         method: "DELETE",
     });
     if (!response.ok) throw new Error("Failed to delete vehicle");

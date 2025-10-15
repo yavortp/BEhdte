@@ -1,7 +1,5 @@
 import { parse } from 'date-fns';
-import API_BASE_URL from '../config';
 
-// Types
 export interface Booking {
     id: string;
     bookingNumber: string;
@@ -40,7 +38,7 @@ const normalizeBookingDate = (dateStr: string | null | undefined): Date | null =
 };
 
 export const fetchBookings = async (): Promise<Booking[]> => {
-    const response = await fetch(`${API_BASE_URL}/api/bookings`);
+    const response = await fetch(`/api/bookings`);
     if (!response.ok) throw new Error('Failed to fetch bookings');
 
     const rawBookings = await response.json();
@@ -56,7 +54,7 @@ export const fetchBookings = async (): Promise<Booking[]> => {
 };
 
 export const getBookingById = async (id: string): Promise<Booking> => {
-    const response = await fetch(`${API_BASE_URL}/api/bookings/${id}`);
+    const response = await fetch(`/api/bookings/${id}`);
     if (!response.ok) throw new Error('Failed to fetch bookings');
     return await response.json();
 };
@@ -79,7 +77,7 @@ export const updateBooking = async (id: string, bookingData: {
     vehicleModel?: string;
     vehicle?: { id: number; registrationNumber: string; model?: string; brand?: string; color?: string }
 }): Promise<Booking> => {
-    const response = await fetch(`${API_BASE_URL}/api/bookings/${id}`, {
+    const response = await fetch(`/api/bookings/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(bookingData),
@@ -89,14 +87,14 @@ export const updateBooking = async (id: string, bookingData: {
 };
 
 export const deleteBooking = async (id: string): Promise<void> => {
-    const response = await fetch(`${API_BASE_URL}/api/bookings/${id}`, {
+    const response = await fetch(`/api/bookings/${id}`, {
         method: 'DELETE',
     });
     if (!response.ok) throw new Error('Failed to delete booking');
 };
 
 export const assignDriverToBooking = async (bookingId: string, driverId: string): Promise<Booking> => {
-    const response = await fetch(`${API_BASE_URL}/api/bookings/${bookingId}/assign-driver/${driverId}`, {
+    const response = await fetch(`/api/bookings/${bookingId}/assign-driver/${driverId}`, {
         method: 'POST',
     });
     if (!response.ok) throw new Error('Failed to assign driver');
@@ -107,7 +105,7 @@ export const processBulkBookings = async (file: File): Promise<{ message: string
     const formData = new FormData();
     formData.append('file', file);
 
-    const response = await fetch(`${API_BASE_URL}/api/bookings/upload`, {
+    const response = await fetch(`/api/bookings/upload`, {
         method: 'POST',
         body: formData,
     });
@@ -117,7 +115,7 @@ export const processBulkBookings = async (file: File): Promise<{ message: string
 };
 
 export const syncWithApi = async (bookingId: string): Promise<Booking> => {
-    const response = await fetch(`${API_BASE_URL}/api/bookings/${bookingId}/sync`, {
+    const response = await fetch(`/api/bookings/${bookingId}/sync`, {
         method: 'PUT',
     });
     if (!response.ok) throw new Error('Failed to sync booking');
