@@ -68,6 +68,9 @@ api:
     header-prefix: ${EXTERNAL_API_HEADER_PREFIX:Bearer}
     timeout: ${EXTERNAL_API_TIMEOUT:10000}
 
+turnstile:
+  secret-key: ${TURNSTILE_SECRET_KEY}
+
 firebase:
   credentials:
     json: ${FIREBASE_CREDENTIALS_JSON:}
