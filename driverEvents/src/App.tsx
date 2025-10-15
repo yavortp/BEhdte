@@ -20,9 +20,9 @@ function App() {
         <Router>
             <ToastContainer position="top-right" autoClose={3000} />
             <Routes>
-                <Route path="/" element={<Layout />}>
-                    <Route path="/login" element={<Login />} />
+                <Route path="/login" element={<Login />} />
 
+                <Route path="/" element={<Layout />}>
                     {/* Protected Routes */}
                     <Route index element={
                         <PrivateRoute>
