@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Upload, Bell, Settings, Menu } from 'lucide-react';
+import { Upload, Menu } from 'lucide-react';
 
 const Header: React.FC = () => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
@@ -26,23 +26,23 @@ const Header: React.FC = () => {
                             <span>Upload</span>
                         </Link>
 
-                        <button className="p-1 rounded-full text-gray-500 hover:text-gray-600 hover:bg-gray-100 focus:outline-none">
-                            <Bell size={20} />
-                        </button>
+                  {/*      <button className="p-1 rounded-full text-gray-500 hover:text-gray-600 hover:bg-gray-100 focus:outline-none">*/}
+                  {/*          <Bell size={20} />*/}
+                  {/*      </button>*/}
 
-                        <button className="p-1 rounded-full text-gray-500 hover:text-gray-600 hover:bg-gray-100 focus:outline-none">
-                            <Settings size={20} />
-                        </button>
+                  {/*      <button className="p-1 rounded-full text-gray-500 hover:text-gray-600 hover:bg-gray-100 focus:outline-none">*/}
+                  {/*          <Settings size={20} />*/}
+                  {/*      </button>*/}
 
-                        <div className="ml-3 relative">
-                            <div>
-                                <button className="flex text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                  <span className="inline-flex h-8 w-8 rounded-full bg-blue-500 items-center justify-center">
-                    <span className="text-sm font-medium text-white">JD</span>
-                  </span>
-                                </button>
-                            </div>
-                        </div>
+                  {/*      <div className="ml-3 relative">*/}
+                  {/*          <div>*/}
+                  {/*              <button className="flex text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">*/}
+                  {/*<span className="inline-flex h-8 w-8 rounded-full bg-blue-500 items-center justify-center">*/}
+                  {/*  <span className="text-sm font-medium text-white">JD</span>*/}
+                  {/*</span>*/}
+                  {/*              </button>*/}
+                  {/*          </div>*/}
+                  {/*      </div>*/}
                     </div>
                 </div>
             </div>
