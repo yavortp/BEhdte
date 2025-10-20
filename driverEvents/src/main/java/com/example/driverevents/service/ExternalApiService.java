@@ -38,8 +38,8 @@ public class ExternalApiService {
     @Value("${api.external.header-name:Authorization}")
     private String apiKeyHeaderName;
 
-    @Value("${api.external.header-prefix:Bearer}")
-    private String apiKeyHeaderPrefix;
+//    @Value("${api.external.header-prefix:Bearer}")
+//    private String apiKeyHeaderPrefix;
 
     @PostConstruct
     public void init() {
@@ -47,7 +47,7 @@ public class ExternalApiService {
         log.info("Base URL: {}", externalApiBaseUrl);
         log.info("API Key configured: {}", apiKey != null && !apiKey.isEmpty());
         log.info("Header name: {}", apiKeyHeaderName);
-        log.info("Header prefix: {}", apiKeyHeaderPrefix);
+//        log.info("Header prefix: {}", apiKeyHeaderPrefix);
 
         if (apiKey == null || apiKey.isEmpty()) {
             log.error("WARNING: External API key is not configured!");
@@ -60,11 +60,7 @@ public class ExternalApiService {
         headers.setContentType(MediaType.APPLICATION_JSON);
 
         // Format: "Bearer your-api-key" or just the key depending on API requirements
-        if (apiKeyHeaderPrefix != null && !apiKeyHeaderPrefix.isEmpty()) {
-            headers.set(apiKeyHeaderName, apiKeyHeaderPrefix + " " + apiKey);
-        } else {
-            headers.set(apiKeyHeaderName, apiKey);
-        }
+        headers.set(apiKeyHeaderName, apiKey);
 
         return headers;
     }
@@ -125,11 +121,6 @@ public class ExternalApiService {
             );
             log.info("Sending single booking to: {}", url);
 
-//            prints the payload in the console for testing
-//            ObjectMapper mapper = new ObjectMapper();
-//            String jsonPayload = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(dto);
-//            System.out.println("Payload:\n" + jsonPayload);
-
             ResponseEntity<String> response = new RestTemplate()
                     .exchange(url, HttpMethod.PUT, request, String.class);
 
@@ -185,7 +176,7 @@ public class ExternalApiService {
             ResponseEntity<String> response = restTemplate.postForEntity(url, entity, String.class);
 
             if (response.getStatusCode().is2xxSuccessful()) {
-                log.info("✓ Location sent successfully - Booking: {} - Vehicle: {}",
+                log.info("Location sent successfully - Booking: {} - Vehicle: {}",
                         booking.getBookingNumber(),
                         booking.getVehicle().getRegistrationNumber());
 
