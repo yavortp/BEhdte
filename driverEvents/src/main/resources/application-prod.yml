@@ -66,7 +66,7 @@ api:
     api-key: ${EXTERNAL_API_KEY}
     header-name: ${EXTERNAL_API_HEADER_NAME:API_KEY}
     header-prefix: ${EXTERNAL_API_HEADER_PREFIX:Bearer}
-    version: ${EXTERNAL_API_VERSION:1.0}
+    version: ${EXTERNAL_API_VERSION:2025-10}
     timeout: ${EXTERNAL_API_TIMEOUT:10000}
 
 turnstile:
