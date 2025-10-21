@@ -72,7 +72,7 @@ public class ExternalApiService {
             HttpEntity<ExternalBookingDTO> request = new HttpEntity<>(dto, headers);
 
             String url = String.format(
-                    "%s/bookings/%s/vehicles/%s/location",
+                    "%s/bookings/%s/vehicles/%s",
                     externalApiBaseUrl,
                     bookingNumber,
                     vehicleReg
@@ -114,7 +114,7 @@ public class ExternalApiService {
             HttpEntity<ExternalBookingDTO> request = new HttpEntity<>(dto, headers);
 
             String url = String.format(
-                    "%s/bookings/%s/vehicles/%s/location",
+                    "%s/bookings/%s/vehicles/%s",
                     externalApiBaseUrl,
                     bookingNumber,
                     vehicleReg

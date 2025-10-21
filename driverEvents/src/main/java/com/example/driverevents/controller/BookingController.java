@@ -1,8 +1,11 @@
 package com.example.driverevents.controller;
 
 import com.example.driverevents.model.Booking;
+import com.example.driverevents.model.ExternalBookingDTO;
+import com.example.driverevents.repository.BookingRepository;
 import com.example.driverevents.service.BookingService;
 import com.example.driverevents.service.BookingsSyncService;
+import com.example.driverevents.service.ExternalApiService;
 import com.example.driverevents.service.FileProcessingService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +30,8 @@ public class BookingController {
     private final BookingService bookingService;
     private final FileProcessingService fileProcessingService;
     private final BookingsSyncService bookingSyncService;
+    private final BookingRepository bookingRepository;
+    private final ExternalApiService externalApiService;
 
     @GetMapping
     public ResponseEntity<List<Booking>> getAllBookings() {
@@ -105,6 +110,65 @@ public class BookingController {
         List<Booking> bookings = bookingService.getUnsyncedBookings();
         log.info("Found {} unsynced bookings", bookings.size());
         return ResponseEntity.ok(bookings);
+    }
+
+    @PutMapping("/{id}/sync")
+    public ResponseEntity<?> syncBookingWithExternalApi(@PathVariable Long id) {
+        try {
+            log.info("Sync request received for booking ID: {}", id);
+
+            // 1. Get the booking
+            Booking booking = bookingRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Booking not found with id: " + id));
+
+            // 2. Validate that booking has required data
+            if (booking.getVehicle() == null || booking.getVehicle().getRegistrationNumber() == null) {
+                log.warn("Cannot sync booking {}: No vehicle assigned", id);
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "Booking must have a vehicle assigned before syncing"));
+            }
+
+            if (booking.getDriver() == null) {
+                log.warn("Cannot sync booking {}: No driver assigned", id);
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "Booking must have a driver assigned before syncing"));
+            }
+
+            // 3. Build the DTO for external API
+            ExternalBookingDTO dto = new ExternalBookingDTO();
+            // TODO: Set whatever fields your ExternalBookingDTO needs
+            // Example based on typical booking data:
+            // dto.setBookingNumber(booking.getBookingNumber());
+            // dto.setStartTime(booking.getStartTime());
+            // dto.setDestination(booking.getDestination());
+            // dto.setDriverName(booking.getDriver().getName());
+            // dto.setVehicleRegistration(booking.getVehicle().getRegistrationNumber());
+
+            // 4. Call the external API service
+            boolean success = externalApiService.sendSingleBookingToApi(
+                    booking.getBookingNumber(),
+                    booking.getVehicle().getRegistrationNumber(),
+                    dto
+            );
+
+            // 5. Update sync status if successful
+            if (success) {
+                booking.setSyncedWithApi(true);
+                bookingRepository.save(booking);
+
+                log.info("Successfully synced booking {} with external API", id);
+                return ResponseEntity.ok(booking);
+            } else {
+                log.error("External API returned failure for booking {}", id);
+                return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+                        .body(Map.of("error", "Failed to sync with external API - API returned failure"));
+            }
+
+        } catch (Exception e) {
+            log.error("Error syncing booking {}: {}", id, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Error syncing booking: " + e.getMessage()));
+        }
     }
 
     @PutMapping("/bulk-sync")
