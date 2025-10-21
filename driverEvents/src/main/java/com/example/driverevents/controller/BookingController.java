@@ -187,38 +187,43 @@ public class BookingController {
     }
 
     private ExternalBookingDTO buildExternalBookingDTO(Booking booking) {
-        // Build Driver DTO with null-safe defaults
-        ExternalBookingDTO.Driver driver = ExternalBookingDTO.Driver.builder()
+
+        log.debug("Building DTO for booking: {}", booking.getBookingNumber());
+        log.debug("Driver phone: {}, Contact method: {}" , booking.getDriver().getPhoneNumber(),
+                booking.getDriver().getPreferredContactMethod().toString());
+                // Build Driver DTO with null-safe defaults
+
+        String contactMethodStr = booking.getDriver().getPreferredContactMethod() != null
+                ? booking.getDriver().getPreferredContactMethod().name()
+                : "VOICE";
+
+        ExternalBookingDTO.DriverDTO driverDTO = ExternalBookingDTO.DriverDTO.builder()
                 .name(booking.getDriver().getName())
-                .phoneNumber(booking.getDriver().getPhoneNumber() != null
-                        ? booking.getDriver().getPhoneNumber()
-                        : "+000000000000")
-                .preferredContactMethod(booking.getDriver().getPreferredContactMethod() != null
-                        ? booking.getDriver().getPreferredContactMethod().toString()
-                        : "VOICE")
+                .phoneNumber(booking.getDriver().getPhoneNumber())
+                .preferredContactMethod(contactMethodStr)
                 .build();
 
+        log.debug("Built DriverDTO - Name: {}, Phone: {}, Contact: {}",
+                driverDTO.getName(), driverDTO.getPhoneNumber(), driverDTO.getPreferredContactMethod().toString());
+
         // Build Vehicle DTO with null-safe defaults
-        ExternalBookingDTO.Vehicle vehicle = ExternalBookingDTO.Vehicle.builder()
-                .brand(booking.getVehicle().getBrand() != null
-                        ? booking.getVehicle().getBrand()
-                        : "Unknown")
-                .model(booking.getVehicle().getModel() != null
-                        ? booking.getVehicle().getModel()
-                        : "Unknown")
-                .color(booking.getVehicle().getColor() != null
-                        ? booking.getVehicle().getColor()
-                        : "Unknown")
+        ExternalBookingDTO.VehicleDTO vehicleDTO = ExternalBookingDTO.VehicleDTO.builder()
+                .brand(booking.getVehicle().getBrand())
+                .model(booking.getVehicle().getModel())
+                .color(booking.getVehicle().getColor())
                 .description(booking.getVehicle().getDescription() != null
                         ? booking.getVehicle().getDescription()
                         : "")
                 .registration(booking.getVehicle().getRegistrationNumber())
                 .build();
 
+        log.debug("Built VehicleDTO - Brand: {}, Model: {}, Registration: {}",
+                vehicleDTO.getBrand(), vehicleDTO.getModel(), vehicleDTO.getRegistration());
+
         // Build complete DTO
         return ExternalBookingDTO.builder()
-                .driver(driver)
-                .vehicle(vehicle)
+                .driver(driverDTO)
+                .vehicle(vehicleDTO)
                 .build();
     }
 }
