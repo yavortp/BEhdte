@@ -111,6 +111,14 @@ public class BookingController {
         return ResponseEntity.ok(bookings);
     }
 
+    @PutMapping("/bulk-sync")
+    public ResponseEntity<List<Booking>> bulkSync(@RequestBody List<Long> ids) {
+        log.info("Starting bulk sync for {} bookings", ids.size());
+        List<Booking> syncedBookings = bookingSyncService.syncMultipleBookings(ids);
+        log.info("Successfully synced {}/{} bookings", syncedBookings.size(), ids.size());
+        return ResponseEntity.ok(syncedBookings);
+    }
+
     @PutMapping("/{id}/sync")
     public ResponseEntity<?> syncBookingWithExternalApi(@PathVariable Long id) {
         try {
@@ -162,14 +170,6 @@ public class BookingController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "Error syncing booking: " + e.getMessage()));
         }
-    }
-
-    @PutMapping("/bulk-sync")
-    public ResponseEntity<List<Booking>> bulkSync(@RequestBody List<Long> ids) {
-        log.info("Starting bulk sync for {} bookings", ids.size());
-        List<Booking> syncedBookings = bookingSyncService.syncMultipleBookings(ids);
-        log.info("Successfully synced {}/{} bookings", syncedBookings.size(), ids.size());
-        return ResponseEntity.ok(syncedBookings);
     }
 
     @PostMapping("/bulk-delete")

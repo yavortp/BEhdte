@@ -85,8 +85,10 @@ logging:
     root: INFO
     com.example.driverevents: DEBUG
     org.springframework.web: INFO
+    org.springframework.security: WARN
     org.hibernate: WARN
-    com.zaxxer.hikari: DEBUG
+    org.hibernate.SQL: WARN
+    com.zaxxer.hikari: WARN
     org.apache.kafka: ERROR
     org.springframework.kafka: ERROR
   pattern:
