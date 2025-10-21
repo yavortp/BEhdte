@@ -38,6 +38,9 @@ public class ExternalApiService {
     @Value("${api.external.header-name:Authorization}")
     private String apiKeyHeaderName;
 
+    @Value("${api.external.version:1.0}")
+    private String apiVersion;
+
 //    @Value("${api.external.header-prefix:Bearer}")
 //    private String apiKeyHeaderPrefix;
 
@@ -58,8 +61,9 @@ public class ExternalApiService {
     private HttpHeaders createAuthHeaders() {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setAccept(java.util.List.of(MediaType.APPLICATION_JSON));
+        headers.set("VERSION", apiVersion);
 
-        // Format: "Bearer your-api-key" or just the key depending on API requirements
         headers.set(apiKeyHeaderName, apiKey);
 
         return headers;
@@ -120,6 +124,9 @@ public class ExternalApiService {
                     vehicleReg
             );
             log.info("Sending single booking to: {}", url);
+            log.debug("Headers: VERSION={}, Accept={}, Content-Type={}, Auth={}",
+                    headers.get("VERSION"), headers.get("Accept"), headers.getContentType(),
+                    apiKeyHeaderName);
 
             ResponseEntity<String> response = new RestTemplate()
                     .exchange(url, HttpMethod.PUT, request, String.class);
