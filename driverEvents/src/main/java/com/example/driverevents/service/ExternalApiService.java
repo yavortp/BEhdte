@@ -38,11 +38,17 @@ public class ExternalApiService {
     @Value("${api.external.header-name:Authorization}")
     private String apiKeyHeaderName;
 
-    @Value("${api.external.version:1.0}")
+    @Value("${api.external.version:2025-10}")
     private String apiVersion;
 
-//    @Value("${api.external.header-prefix:Bearer}")
-//    private String apiKeyHeaderPrefix;
+
+    private String getApiVersion() {
+        // If version is configured, use it; otherwise use current YYYY-MM
+        if (apiVersion != null && !apiVersion.isEmpty()) {
+            return apiVersion;
+        }
+        return YearMonth.now().format(DateTimeFormatter.ofPattern("yyyy-MM"));
+    }
 
     @PostConstruct
     public void init() {
@@ -50,19 +56,18 @@ public class ExternalApiService {
         log.info("Base URL: {}", externalApiBaseUrl);
         log.info("API Key configured: {}", apiKey != null && !apiKey.isEmpty());
         log.info("Header name: {}", apiKeyHeaderName);
-//        log.info("Header prefix: {}", apiKeyHeaderPrefix);
+        log.info("API Version: {}", apiVersion);
 
         if (apiKey == null || apiKey.isEmpty()) {
             log.error("WARNING: External API key is not configured!");
         }
     }
 
-//    Create headers with API key authentication
     private HttpHeaders createAuthHeaders() {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setAccept(java.util.List.of(MediaType.APPLICATION_JSON));
-        headers.set("VERSION", apiVersion);
+        headers.set("VERSION", getApiVersion());
 
         headers.set(apiKeyHeaderName, apiKey);
 
