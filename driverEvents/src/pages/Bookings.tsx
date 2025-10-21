@@ -193,41 +193,61 @@ const Bookings: React.FC = () => {
     };
 
     const handleSyncSelected = async () => {
+        if (selectedBookings.length === 0) {
+            toast.warning('Please select at least one booking to sync');
+            return;
+        }
+
         try {
-            const response = await fetch('http://localhost:8080/api/bookings/sync', {
-                method: 'POST',
+            const response = await fetch('/api/bookings/sync', {
+                method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(selectedBookings.map(id => parseInt(id)))
             });
 
-            if (!response.ok) throw new Error('Sync failed');
-            toast.success('Bookings synced successfully');
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => null);
+                throw new Error(errorData?.error || 'Sync failed');
+            }
+            const syncedBookings = await response.json();
+            toast.success(`Successfully synced ${syncedBookings.length} booking(s)`);
+
             loadBookings(); // Refresh list
             setSelectedBookings([]); // Clear selection
         } catch (error) {
-            toast.error('Failed to sync bookings');
-            console.error(error);
+            toast.error(`Failed to sync bookings: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            console.error('Sync error: ', error);
         }
     };
 
     const handleDeleteSelected = async () => {
+        if (selectedBookings.length === 0) {
+            toast.warning('Please select at least one booking to delete');
+            return;
+        }
+
+        if (!window.confirm(`Are you sure you want to delete ${selectedBookings.length} booking(s)? This action cannot be undone.`)) {
+            return;
+        }
+
         try {
-            const response = await fetch('http://localhost:8080/api/bookings/bulk-delete', {
+            const response = await fetch('/api/bookings/bulk-delete', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(selectedBookings.map(id => parseInt(id)))
             });
 
             if (!response.ok) {
-                throw new Error(`Delete failed with status ${response.status}`);
+                const errorData = await response.json().catch(() => null);
+                throw new Error(errorData?.error || `Delete failed with status ${response.status}`);
             }
 
             toast.success('Bookings deleted successfully');
             loadBookings(); // Refresh list
             setSelectedBookings([]); // Clear selection
         } catch (error) {
-            toast.error('Failed to delete bookings');
-            console.error(error);
+            toast.error(`Failed to delete bookings: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            console.error('Delete error:', error);
         }
     };
 
