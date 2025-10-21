@@ -64,8 +64,9 @@ api:
   external:
     base-url: ${EXTERNAL_API_BASE_URL:https://suppliers.htxstaging.com}
     api-key: ${EXTERNAL_API_KEY}
-    header-name: ${EXTERNAL_API_HEADER_NAME:Authorization}
+    header-name: ${EXTERNAL_API_HEADER_NAME:API_KEY}
     header-prefix: ${EXTERNAL_API_HEADER_PREFIX:Bearer}
+    version: ${EXTERNAL_API_VERSION:1.0}
     timeout: ${EXTERNAL_API_TIMEOUT:10000}
 
 turnstile:

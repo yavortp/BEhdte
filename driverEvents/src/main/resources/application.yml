@@ -43,7 +43,8 @@ api:
   external:
     base-url: https://suppliers.htxstaging.com
     api-key: dev-test-key-12345
-    header-name: Authorization
+    header-name: API_KEY
+    version: "1.0"
     header-prefix: Bearer
     timeout: 10000
 
