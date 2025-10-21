@@ -111,7 +111,7 @@ public class BookingController {
         return ResponseEntity.ok(bookings);
     }
 
-    @PutMapping("/bulk-sync")
+    @PutMapping("/actions/bulk-sync")
     public ResponseEntity<List<Booking>> bulkSync(@RequestBody List<Long> ids) {
         log.info("Starting bulk sync for {} bookings", ids.size());
         List<Booking> syncedBookings = bookingSyncService.syncMultipleBookings(ids);

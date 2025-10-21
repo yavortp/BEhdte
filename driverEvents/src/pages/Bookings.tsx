@@ -199,7 +199,7 @@ const Bookings: React.FC = () => {
         }
 
         try {
-            const response = await fetch('/api/bookings/sync', {
+            const response = await fetch('/api/bookings/actions/bulk-sync', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(selectedBookings.map(id => parseInt(id)))
