@@ -11,8 +11,8 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class ExternalBookingDTO {
-     private Driver driver;
-     private Vehicle vehicle;
+     private DriverDTO driver;
+     private VehicleDTO vehicle;
 
 //    public Driver getDriver() {
 //        return driver;
@@ -34,7 +34,7 @@ public class ExternalBookingDTO {
     @NoArgsConstructor
     @AllArgsConstructor
     @Builder
-    public static class Driver {
+    public static class DriverDTO {
         private String name;
         private String phoneNumber;
         private String preferredContactMethod;
@@ -68,7 +68,7 @@ public class ExternalBookingDTO {
     @NoArgsConstructor
     @AllArgsConstructor
     @Builder
-    public static class Vehicle {
+    public static class VehicleDTO {
         private String brand;
         private String model;
         private String color;
