@@ -34,6 +34,8 @@ spring:
 
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    listener:
+      missing-topics-fatal: false
     producer:
       retries: 3
       acks: all
@@ -85,6 +87,8 @@ logging:
     org.springframework.web: INFO
     org.hibernate: WARN
     com.zaxxer.hikari: DEBUG
+    org.apache.kafka: ERROR
+    org.springframework.kafka: ERROR
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
 

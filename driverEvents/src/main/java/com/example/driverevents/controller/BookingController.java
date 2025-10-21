@@ -10,15 +10,14 @@ import com.example.driverevents.service.FileProcessingService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Arrays;
 
 @Slf4j
 @RestController
@@ -135,7 +134,7 @@ public class BookingController {
             }
 
             // 3. Build the DTO for external API
-            ExternalBookingDTO dto = new ExternalBookingDTO();
+            ExternalBookingDTO dto = buildExternalBookingDTO(booking);
             // TODO: Set whatever fields your ExternalBookingDTO needs
             // Example based on typical booking data:
             // dto.setBookingNumber(booking.getBookingNumber());
@@ -191,5 +190,41 @@ public class BookingController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", e.getMessage()));
         }
+    }
+
+    private ExternalBookingDTO buildExternalBookingDTO(Booking booking) {
+        // Build Driver DTO with null-safe defaults
+        ExternalBookingDTO.Driver driver = ExternalBookingDTO.Driver.builder()
+                .name(booking.getDriver().getName())
+                .phoneNumber(booking.getDriver().getPhoneNumber() != null
+                        ? booking.getDriver().getPhoneNumber()
+                        : "+000000000000")
+                .preferredContactMethod(booking.getDriver().getPreferredContactMethod() != null
+                        ? booking.getDriver().getPreferredContactMethod().toString()
+                        : "VOICE")
+                .build();
+
+        // Build Vehicle DTO with null-safe defaults
+        ExternalBookingDTO.Vehicle vehicle = ExternalBookingDTO.Vehicle.builder()
+                .brand(booking.getVehicle().getBrand() != null
+                        ? booking.getVehicle().getBrand()
+                        : "Unknown")
+                .model(booking.getVehicle().getModel() != null
+                        ? booking.getVehicle().getModel()
+                        : "Unknown")
+                .color(booking.getVehicle().getColor() != null
+                        ? booking.getVehicle().getColor()
+                        : "Unknown")
+                .description(booking.getVehicle().getDescription() != null
+                        ? booking.getVehicle().getDescription()
+                        : "")
+                .registration(booking.getVehicle().getRegistrationNumber())
+                .build();
+
+        // Build complete DTO
+        return ExternalBookingDTO.builder()
+                .driver(driver)
+                .vehicle(vehicle)
+                .build();
     }
 }
