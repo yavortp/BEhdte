@@ -4,13 +4,16 @@ import com.example.driverevents.model.Booking;
 import com.example.driverevents.model.ExternalBookingDTO;
 import com.example.driverevents.repository.BookingRepository;
 import jakarta.persistence.EntityNotFoundException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
 @Service
+@Slf4j
 public class BookingsSyncService {
 
     private final BookingRepository bookingRepository;
@@ -39,9 +42,6 @@ public class BookingsSyncService {
             bookingRepository.save(booking);
         }
 
-        booking.setSyncedWithApi(true);
-//        System.out.println("Returning booking: " + booking.getId() + ", synced=" + booking.getSyncedWithApi());
-
         return booking;
     }
 
@@ -63,7 +63,7 @@ public class BookingsSyncService {
                 bookingRepository.save(booking);
                 synced.add(booking);
             } else {
-                System.err.println("Failed to sync booking: " + booking.getBookingNumber());
+                log.error("Failed to sync booking: {}", booking.getBookingNumber());
             }
         }
 
@@ -71,23 +71,56 @@ public class BookingsSyncService {
     }
 
     private ExternalBookingDTO mapToExternalDTO(Booking booking) {
-        ExternalBookingDTO dto = new ExternalBookingDTO();
+//        ExternalBookingDTO dto = new ExternalBookingDTO();
 
-        ExternalBookingDTO.Driver driver = new ExternalBookingDTO.Driver();
-        driver.setName(booking.getDriver().getName());
-        driver.setPhoneNumber(booking.getDriver().getPhoneNumber());
-        driver.setPreferredContactMethod(booking.getDriver().getPreferredContactMethod().toString());
+        String contactMethodStr = booking.getDriver().getPreferredContactMethod() != null
+                ? booking.getDriver().getPreferredContactMethod().name()
+                : "VOICE";
 
-        ExternalBookingDTO.Vehicle vehicle = new ExternalBookingDTO.Vehicle();
-        vehicle.setBrand(booking.getVehicle().getBrand());
-        vehicle.setModel(booking.getVehicle().getModel());
-        vehicle.setColor(booking.getVehicle().getColor());
-        vehicle.setDescription(booking.getVehicle().getDescription());
-        vehicle.setRegistration(booking.getVehicle().getRegistrationNumber());
+        // Build contact methods list based on preferred method
+//        List<String> contactMethodsList = Arrays.asList(contactMethodStr, "SMS");
+//        if (!contactMethodsList.contains("VOICE")) {
+//            contactMethodsList = Arrays.asList("VOICE", contactMethodStr);
+//        }
 
-        dto.setDriver(driver);
-        dto.setVehicle(vehicle);
+        // Build Driver DTO (note: DriverDTO, not Driver)
+        ExternalBookingDTO.DriverDTO driver = ExternalBookingDTO.DriverDTO.builder()
+                .name(booking.getDriver().getName())
+                .phoneNumber(booking.getDriver().getPhoneNumber())
+                .preferredContactMethod(contactMethodStr)
+                .build();
 
-        return dto;
+        // Build Vehicle DTO (note: VehicleDTO, not Vehicle)
+        ExternalBookingDTO.VehicleDTO vehicle = ExternalBookingDTO.VehicleDTO.builder()
+                .brand(booking.getVehicle().getBrand())
+                .model(booking.getVehicle().getModel())
+                .color(booking.getVehicle().getColor())
+                .description(booking.getVehicle().getDescription() != null
+                        ? booking.getVehicle().getDescription()
+                        : "")
+                .registration(booking.getVehicle().getRegistrationNumber())
+                .build();
+
+        // Build complete DTO
+        return ExternalBookingDTO.builder()
+                .driver(driver)
+                .vehicle(vehicle)
+                .build();
+//        ExternalBookingDTO.Driver driver = new ExternalBookingDTO.Driver();
+//        driver.setName(booking.getDriver().getName());
+//        driver.setPhoneNumber(booking.getDriver().getPhoneNumber());
+//        driver.setPreferredContactMethod(booking.getDriver().getPreferredContactMethod().toString());
+//
+//        ExternalBookingDTO.Vehicle vehicle = new ExternalBookingDTO.Vehicle();
+//        vehicle.setBrand(booking.getVehicle().getBrand());
+//        vehicle.setModel(booking.getVehicle().getModel());
+//        vehicle.setColor(booking.getVehicle().getColor());
+//        vehicle.setDescription(booking.getVehicle().getDescription());
+//        vehicle.setRegistration(booking.getVehicle().getRegistrationNumber());
+//
+//        dto.setDriver(driver);
+//        dto.setVehicle(vehicle);
+//
+//        return dto;
     }
 }
