@@ -133,15 +133,9 @@ public class BookingController {
                         .body(Map.of("error", "Booking must have a driver assigned before syncing"));
             }
 
-            // 3. Build the DTO for external API
             ExternalBookingDTO dto = buildExternalBookingDTO(booking);
-            // TODO: Set whatever fields your ExternalBookingDTO needs
-            // Example based on typical booking data:
-            // dto.setBookingNumber(booking.getBookingNumber());
-            // dto.setStartTime(booking.getStartTime());
-            // dto.setDestination(booking.getDestination());
-            // dto.setDriverName(booking.getDriver().getName());
-            // dto.setVehicleRegistration(booking.getVehicle().getRegistrationNumber());
+
+            log.info("DTO returned: {}", dto);
 
             // 4. Call the external API service
             boolean success = externalApiService.sendSingleBookingToApi(
@@ -158,7 +152,7 @@ public class BookingController {
                 log.info("Successfully synced booking {} with external API", id);
                 return ResponseEntity.ok(booking);
             } else {
-                log.error("External API returned failure for booking {}", id);
+                log.error("External API returned failure for booking with id: {}, booking number: {}", id, booking.getBookingNumber());
                 return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
                         .body(Map.of("error", "Failed to sync with external API - API returned failure"));
             }
