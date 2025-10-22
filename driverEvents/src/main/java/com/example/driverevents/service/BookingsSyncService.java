@@ -46,10 +46,20 @@ public class BookingsSyncService {
     }
 
     public List<Booking> syncMultipleBookings(List<Long> ids) {
+        log.info("Starting bulk sync for {} booking IDs: {}", ids.size(), ids);
         List<Booking> bookings = bookingRepository.findAllById(ids);
+        log.info("Found {} bookings to sync", bookings.size());
         List<Booking> synced = new ArrayList<>();
 
         for (Booking booking : bookings) {
+            log.info("Processing booking ID: {}, Number: {}", booking.getId(), booking.getBookingNumber());
+
+            // Validate booking has required data
+            if (booking.getVehicle() == null || booking.getDriver() == null) {
+                log.warn("Skipping booking {}: Missing driver or vehicle", booking.getBookingNumber());
+                continue;
+            }
+
             ExternalBookingDTO dto = mapToExternalDTO(booking);
             boolean success = externalApiService.sendSingleBookingToApi(
                     booking.getBookingNumber(),
@@ -58,30 +68,26 @@ public class BookingsSyncService {
             );
 
             if (success) {
+                log.info("Successfully synced booking {}, setting syncedWithApi=true", booking.getBookingNumber());
                 booking.setSyncedWithApi(true);
                 booking.setUpdatedAt(LocalDateTime.now());
-                bookingRepository.save(booking);
+                Booking saved = bookingRepository.save(booking);
+                log.info("Saved booking {} with syncedWithApi={}", saved.getBookingNumber(), saved.getSyncedWithApi());
                 synced.add(booking);
             } else {
                 log.error("Failed to sync booking: {}", booking.getBookingNumber());
             }
         }
 
+        log.info("Bulk sync complete: {}/{} bookings synced successfully", synced.size(), bookings.size());
         return synced;
     }
 
     private ExternalBookingDTO mapToExternalDTO(Booking booking) {
-//        ExternalBookingDTO dto = new ExternalBookingDTO();
 
         String contactMethodStr = booking.getDriver().getPreferredContactMethod() != null
                 ? booking.getDriver().getPreferredContactMethod().name()
                 : "VOICE";
-
-        // Build contact methods list based on preferred method
-//        List<String> contactMethodsList = Arrays.asList(contactMethodStr, "SMS");
-//        if (!contactMethodsList.contains("VOICE")) {
-//            contactMethodsList = Arrays.asList("VOICE", contactMethodStr);
-//        }
 
         // Build Driver DTO (note: DriverDTO, not Driver)
         ExternalBookingDTO.DriverDTO driver = ExternalBookingDTO.DriverDTO.builder()
@@ -106,21 +112,5 @@ public class BookingsSyncService {
                 .driver(driver)
                 .vehicle(vehicle)
                 .build();
-//        ExternalBookingDTO.Driver driver = new ExternalBookingDTO.Driver();
-//        driver.setName(booking.getDriver().getName());
-//        driver.setPhoneNumber(booking.getDriver().getPhoneNumber());
-//        driver.setPreferredContactMethod(booking.getDriver().getPreferredContactMethod().toString());
-//
-//        ExternalBookingDTO.Vehicle vehicle = new ExternalBookingDTO.Vehicle();
-//        vehicle.setBrand(booking.getVehicle().getBrand());
-//        vehicle.setModel(booking.getVehicle().getModel());
-//        vehicle.setColor(booking.getVehicle().getColor());
-//        vehicle.setDescription(booking.getVehicle().getDescription());
-//        vehicle.setRegistration(booking.getVehicle().getRegistrationNumber());
-//
-//        dto.setDriver(driver);
-//        dto.setVehicle(vehicle);
-//
-//        return dto;
     }
 }
