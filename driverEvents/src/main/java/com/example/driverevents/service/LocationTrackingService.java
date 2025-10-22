@@ -8,14 +8,21 @@ import com.example.driverevents.repository.BookingRepository;
 import com.example.driverevents.repository.DriverRepository;
 import com.example.driverevents.repository.LocationUpdateRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class LocationTrackingService {
@@ -26,70 +33,107 @@ public class LocationTrackingService {
     private final LocationUpdateRepository locationUpdateRepository;
     private final ExternalApiService externalApiService;
 
-    // cache for active Websocket connections
     private final Map<String, Boolean> activeConnections = new ConcurrentHashMap<>();
 
-    @KafkaListener(topics = "driver-locations", groupId = "location-tracking-group")
-    public void handleLocationUpdate(Map<String, Object> locationData) {
-        String driverEmail = (String) locationData.get("username");
-        Double latitude = (Double) locationData.get("latitude");
-        Double longitude = (Double) locationData.get("longitude");
-        OffsetDateTime timestampWithOffset = OffsetDateTime.parse((String) locationData.get("timestamp"));
-        System.out.println("OFFSET TIME" + timestampWithOffset);
-//        LocalDateTime timestamp = LocalDateTime.parse((String) locationData.get("timestamp"));
+    @Scheduled(fixedRate = 5000) // Every 5 seconds
+    @Transactional
+    public void pollNewLocations() {
+        try {
+            // Find all locations that haven't been processed yet (sent_to_api is NULL)
+            List<LocationUpdateFromDrivers> newLocations = locationUpdateRepository
+                    .findBySentToApiIsNullOrderByTimestampAsc();
+
+            if (!newLocations.isEmpty()) {
+                log.debug("Found {} new location updates to process", newLocations.size());
+
+                for (LocationUpdateFromDrivers location : newLocations) {
+                    try {
+                        handleLocationUpdate(location);
+                    } catch (Exception e) {
+                        log.error("Error processing location update {}: {}",
+                                location.getId(), e.getMessage(), e);
+                        // Mark as processed (false) even on error to avoid infinite retries
+                        location.setSentToApi(false);
+                        locationUpdateRepository.save(location);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.error("Error polling for new locations: {}", e.getMessage(), e);
+        }
+    }
+
+    public void handleLocationUpdate(LocationUpdateFromDrivers location) {
+        String driverEmail = location.getUsername();
+        Double latitude = location.getLatitude();
+        Double longitude = location.getLongitude();
+        OffsetDateTime timestampWithOffset = OffsetDateTime.parse((String) "location.getTimestamp()");
         LocalDateTime timestamp = timestampWithOffset.toLocalDateTime();
 
-        System.out.println("- location tracking service - Timestamp: " + timestamp);
+        log.debug("Processing location - Driver: {}, Lat: {}, Lon: {}, Time: {}",
+                driverEmail, latitude, longitude, timestamp);
 
         Driver driver = driverRepository.findByEmail(driverEmail);
         if (driver == null) {
-            System.err.println("No driver found for email: " + driverEmail);
+            log.warn("No driver found for email: {}", driverEmail);
+            location.setSentToApi(true);
+            locationUpdateRepository.save(location);
             return;
         }
 
-        Vehicle vehicle = driver.getVehicles();
-        if (vehicle == null) {
-            System.err.println("No vehicle assigned to driver: " + driverEmail);
-            return;
-        }
+//        Vehicle vehicle = driver.getVehicles();
+//        if (vehicle == null) {
+//            return;
+//        }
 
         // find active booking for this driver
         Booking activeBooking = bookingRepository.findActiveBookingForDriver(driver.getId(), timestamp).orElse(null);
 
-        // save location update to db
-        LocationUpdateFromDrivers update = new LocationUpdateFromDrivers();
-        update.setUsername(driver.getEmail());
-        update.setLatitude(latitude);
-        update.setLongitude(longitude);
-        update.setTimestamp(timestamp);
-        update.setSentToApi(false);
-
-        locationUpdateRepository.save(update);
-
-        // send to websocket if connection is active
+        // Send to WebSocket if connection is active
         if (activeConnections.containsKey(driverEmail)) {
+            Map<String, Object> locationData = new HashMap<>();
+            locationData.put("username", driverEmail);
+            locationData.put("latitude", latitude);
+            locationData.put("longitude", longitude);
+            locationData.put("timestamp", timestamp.toString());
+
             websocket.convertAndSend("/topic/driver/" + driverEmail, locationData);
+            log.debug("Sent location to WebSocket for driver: {}", driverEmail);
         }
 
-        // if there is an active booking send to external API
+        // If there is an active booking, send to external API
         if (activeBooking != null) {
             try {
-                externalApiService.sendLocationUpdate(activeBooking, update);
-                update.setSentToApi(true);
-                locationUpdateRepository.save(update);
+                log.info("Active booking found: {}. Sending location to external API",
+                        activeBooking.getBookingNumber());
+                externalApiService.sendLocationUpdate(activeBooking, location);
+                location.setSentToApi(true);
+                log.info("Successfully sent location to external API for booking: {}",
+                        activeBooking.getBookingNumber());
             } catch (Exception e) {
-                System.err.println("Failed to send location update to external API: " + e.getMessage());
+                log.error("Failed to send location update to external API for booking {}: {}",
+                        activeBooking.getBookingNumber(), e.getMessage(), e);
+                // Don't mark as sent if it failed
+                location.setSentToApi(false);
             }
+        } else {
+            log.debug("No active booking found for driver: {}", driverEmail);
         }
+
+        // Mark as processed
+        location.setSentToApi(true);
+        locationUpdateRepository.save(location);
+        log.debug("Location update {} marked as processed", location.getId());
     }
 
     public void registerWebSocketConnection(String driverEmail) {
         activeConnections.put(driverEmail, true);
+        log.info("WebSocket connection registered for driver: {}", driverEmail);
     }
 
     public void removeWebSocketConnection(String driverEmail) {
         activeConnections.remove(driverEmail);
+        log.info("WebSocket connection removed for driver: {}", driverEmail);
     }
-
 }
 
