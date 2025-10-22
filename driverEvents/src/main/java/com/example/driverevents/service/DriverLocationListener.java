@@ -16,7 +16,7 @@ public class DriverLocationListener {
 
     @PostPersist
     public void afterSave(LocationUpdateFromDrivers location) {
-        if (!location.isSentToApi()) {
+        if (Boolean.FALSE.equals(location.getSentToApi())) {
             // Publish async event to process location
             eventPublisher.publishEvent(new DriverLocationCreatedEvent(location));
         }
