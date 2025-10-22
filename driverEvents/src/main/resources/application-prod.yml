@@ -32,16 +32,16 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         temp.use_jdbc_metadata_defaults: false
 
-  kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
-    listener:
-      missing-topics-fatal: false
-    producer:
-      retries: 3
-      acks: all
-    consumer:
-      auto-offset-reset: earliest
-      enable-auto-commit: true
+#  kafka:
+#    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+#    listener:
+#      missing-topics-fatal: false
+#    producer:
+#      retries: 3
+#      acks: all
+#    consumer:
+#      auto-offset-reset: earliest
+#      enable-auto-commit: true
 
   servlet:
     multipart:
@@ -89,8 +89,6 @@ logging:
     org.hibernate: WARN
     org.hibernate.SQL: WARN
     com.zaxxer.hikari: WARN
-    org.apache.kafka: ERROR
-    org.springframework.kafka: ERROR
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
 

@@ -12,11 +12,11 @@ import java.util.Optional;
 @Repository
 public interface LocationUpdateRepository extends JpaRepository<LocationUpdateFromDrivers, Long> {
 
-//    @Query("SELECT lu FROM LocationUpdate lu WHERE lu.booking.id = :bookingId AND lu.sentToExternalApi = false ORDER BY lu.timestamp")
-
     @Query("SELECT lu FROM LocationUpdateFromDrivers lu ORDER BY lu.timestamp")
     List<LocationUpdateFromDrivers> findUnsentUpdatesByBooking(Long bookingId);
 
     List<LocationUpdateFromDrivers> findBySentToApiTrue();
+
+    List<LocationUpdateFromDrivers> findBySentToApiIsNullOrderByTimestampAsc();
 
 }

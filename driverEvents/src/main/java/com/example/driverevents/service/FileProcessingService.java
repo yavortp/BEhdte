@@ -57,8 +57,8 @@ public class FileProcessingService {
                         continue;
                     }
 
-                    booking.setStartLocation(getCellValueAsString(row.getCell(columnIndexMap.get("from"))));
-                    booking.setDestination(getCellValueAsString(row.getCell(columnIndexMap.get("destination"))));
+                    booking.setStartLocation(getCellValueAsString(row.getCell(columnIndexMap.get("from"))).toUpperCase());
+                    booking.setDestination(getCellValueAsString(row.getCell(columnIndexMap.get("destination"))).toUpperCase());
                     booking.setArrivalOrDeparture(getCellValueAsString(row.getCell(columnIndexMap.get("type"))));
                     booking.setPRVorShuttle(getCellValueAsString(row.getCell(columnIndexMap.get("transp"))));
                     Cell dateCell = row.getCell(columnIndexMap.get("date"));

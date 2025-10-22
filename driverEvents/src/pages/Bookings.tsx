@@ -209,8 +209,19 @@ const Bookings: React.FC = () => {
                 const errorData = await response.json().catch(() => null);
                 throw new Error(errorData?.error || 'Sync failed');
             }
-            const syncedBookings = await response.json();
-            toast.success(`Successfully synced ${syncedBookings.length} booking(s)`);
+
+            const result = await response.json();
+            console.log('Bulk sync result:', result);
+
+            if (result.failedCount > 0) {
+                toast.warning(
+                    `Synced ${result.syncedCount} of ${result.totalCount} booking(s). ` +
+                    `${result.failedCount} failed - check logs for details.`,
+                    { autoClose: 5000 }
+                );
+            } else {
+                toast.success(`Successfully synced all ${result.syncedCount} booking(s)`);
+            }
 
             loadBookings(); // Refresh list
             setSelectedBookings([]); // Clear selection

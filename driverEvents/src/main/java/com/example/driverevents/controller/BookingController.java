@@ -116,6 +116,20 @@ public class BookingController {
         log.info("Starting bulk sync for {} bookings", ids.size());
         List<Booking> syncedBookings = bookingSyncService.syncMultipleBookings(ids);
         log.info("Successfully synced {}/{} bookings", syncedBookings.size(), ids.size());
+
+        Map<String, Object> response = new java.util.HashMap<>();
+        response.put("synced", syncedBookings);
+        response.put("syncedCount", syncedBookings.size());
+        response.put("totalCount", ids.size());
+        response.put("failedCount", ids.size() - syncedBookings.size());
+
+        if (syncedBookings.size() < ids.size()) {
+            response.put("message", String.format("Synced %d of %d bookings. Check logs for failures.",
+                    syncedBookings.size(), ids.size()));
+        } else {
+            response.put("message", "All bookings synced successfully");
+        }
+
         return ResponseEntity.ok(syncedBookings);
     }
 

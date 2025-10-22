@@ -35,7 +35,7 @@ public class LocationUpdateFromDrivers {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime timestamp;
 
-    @Column(nullable = false)
+    @Column
     private boolean sentToApi = false;
 
 }
