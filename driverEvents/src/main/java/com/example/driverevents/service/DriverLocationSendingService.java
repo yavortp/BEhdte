@@ -21,8 +21,8 @@ public class  DriverLocationSendingService {
     public void handleDriverLocation(DriverLocationListener.DriverLocationCreatedEvent event) {
 
         LocationUpdateFromDrivers location = event.location();
-        List<Booking> bookings = activeBookingService.getActiveBookingsForDriver(location.getUsername());
-        System.out.println("ACTIVE BOOKINGS FOR : " + location.getUsername() + " are : " + bookings);
+        List<Booking> bookings = activeBookingService.getActiveBookingsForDriver(location.getEmail());
+        System.out.println("ACTIVE BOOKINGS FOR : " + location.getEmail() + " are : " + bookings);
 
         for (Booking b : bookings) {
             System.out.println("TIMESTAMP for booking " + b + " is: " + location.getTimestamp());

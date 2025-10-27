@@ -3,13 +3,11 @@ package com.example.driverevents.service;
 import com.example.driverevents.model.Booking;
 import com.example.driverevents.model.Driver;
 import com.example.driverevents.model.LocationUpdateFromDrivers;
-import com.example.driverevents.model.Vehicle;
 import com.example.driverevents.repository.BookingRepository;
 import com.example.driverevents.repository.DriverRepository;
 import com.example.driverevents.repository.LocationUpdateRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -64,7 +62,7 @@ public class LocationTrackingService {
     }
 
     public void handleLocationUpdate(LocationUpdateFromDrivers location) {
-        String driverEmail = location.getUsername();
+        String driverEmail = location.getEmail();
         Double latitude = location.getLatitude();
         Double longitude = location.getLongitude();
         OffsetDateTime timestampWithOffset = OffsetDateTime.parse((String) "location.getTimestamp()");

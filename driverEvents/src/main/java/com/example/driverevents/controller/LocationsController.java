@@ -28,7 +28,7 @@ public class LocationsController {
             String email = decodedToken.getEmail();
             String uid = decodedToken.getUid();
             LocationUpdateFromDrivers newLocation = new LocationUpdateFromDrivers();
-            newLocation.setUsername(payload.getUsername());
+            newLocation.setEmail(payload.getEmail());
             newLocation.setLatitude(payload.getLatitude());
             newLocation.setLongitude(payload.getLongitude());
             newLocation.setTimestamp(payload.getTimestamp());
