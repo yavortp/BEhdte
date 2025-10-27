@@ -134,7 +134,7 @@ const Vehicles: React.FC = () => {
             model: '',
             brand: '',
             color: '',
-            description: 'sedan',
+            description: '',
             capacity: 4,
             status: 'available',
         });
@@ -208,14 +208,8 @@ const Vehicles: React.FC = () => {
         switch (normalizedType) {
             case 'truck':
                 return <Truck className="h-5 w-5 text-gray-600" />;
-            // case 'car':
-            //     return <Car className="h-5 w-5 text-gray-600" />;
-            // case 'bus':
-            //     return <Bus className="h-5 w-5 text-gray-600" />;
-            // case 'bike':
-            //     return <Bike className="h-5 w-5 text-gray-600" />;
             default:
-                return <Truck className="h-5 w-5 text-gray-400" />; // fallback icon
+                return <Truck className="h-5 w-5 text-gray-400" />;
         }
     };
 
@@ -264,6 +258,7 @@ const Vehicles: React.FC = () => {
                                     id="registrationNumber"
                                     {...register('registrationNumber', { required: 'Vehicle reg number is required' })}
                                     className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                    placeholder="e.g. PB1234AM"
                                 />
                                 {errors.registrationNumber && (
                                     <p className="mt-1 text-sm text-red-600">{errors.registrationNumber.message}</p>
@@ -293,6 +288,7 @@ const Vehicles: React.FC = () => {
                                     id="model"
                                     {...register('model', { required: 'Model is required' })}
                                     className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                    placeholder="e.g. Astra"
                                 />
                                 {errors.model && (
                                     <p className="mt-1 text-sm text-red-600">{errors.model.message}</p>
@@ -320,8 +316,8 @@ const Vehicles: React.FC = () => {
                                     type="text"
                                     id="type"
                                     {...register('description', { required: 'Type is required' })}
-                                    placeholder="Enter vehicle type"
                                     className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                    placeholder="e.g. Sedan"
                                 />
                                 {errors.description && (
                                     <p className="mt-1 text-sm text-red-600">{errors.description.message}</p>
