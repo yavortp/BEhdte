@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -69,6 +70,19 @@ public class GlobalExceptionHandler {
                 correlationId,
                 HttpStatus.INTERNAL_SERVER_ERROR.value()
         ));
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<String> handleNoResourceFound(NoResourceFoundException ex) {
+        // Ignore robots.txt requests
+        if (ex.getMessage().contains("robots.txt")) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+
+        // Log other missing resources
+        log.error("Resource not found: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body("Resource not found");
     }
 
     private String generateCorrelationId() {
