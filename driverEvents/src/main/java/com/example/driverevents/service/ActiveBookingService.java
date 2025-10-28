@@ -33,18 +33,13 @@ public class ActiveBookingService {
         List<Booking> todaysBookings = activeBookingsRepository.findBookingsForDate(today);
 
         LocalDateTime now = LocalDateTime.now();
-//        System.out.println("- active booking service - TODAY: " + today);
-//        System.out.println("- active booking service - NOW: " + now);
 
         for (Booking b : todaysBookings) {
             try {
-//                System.out.println("- active booking service - booking: " + b.getBookingNumber());
                 LocalDate bookingDate = LocalDate.parse(b.getBookingDate(),
                         DateTimeFormatter.ofPattern("dd.MM.yyyy"));
-//                System.out.println("- active booking service - bookingDate: " + bookingDate);
 
                 LocalDateTime startDateTime = LocalDateTime.of(bookingDate, b.getStartTime());
-//                System.out.println("- active booking service - START: " + startDateTime);
 
                 Integer durationMinutes = destinationsRepository
                         .findDuration(b.getStartLocation(), b.getDestination());
@@ -54,7 +49,6 @@ public class ActiveBookingService {
                 }
 
                 LocalDateTime endDateTime = startDateTime.plusMinutes(durationMinutes);
-//                System.out.println("- active booking service - END: " + endDateTime);
 
                 // Booking is active if we are within [startTime - 30 min, endTime]
                 if (!now.isBefore(startDateTime.minusMinutes(30)) && !now.isAfter(endDateTime)) {

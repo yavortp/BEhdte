@@ -66,10 +66,10 @@ public class LocationTrackingService {
         String driverEmail = location.getEmail();
         Double latitude = location.getLatitude();
         Double longitude = location.getLongitude();
-        LocalDateTime timestamp = location.getTimestamp();
+//        LocalDateTime timestamp = location.getTimestamp();
 
-//        OffsetDateTime timestampWithOffset = OffsetDateTime.parse((String) "location.getTimestamp()");
-//        LocalDateTime timestamp = timestampWithOffset.toLocalDateTime();
+        OffsetDateTime timestampWithOffset = OffsetDateTime.parse((String) "location.getTimestamp()");
+        LocalDateTime timestamp = timestampWithOffset.toLocalDateTime();
 
         log.debug("Processing location - Driver: {}, Lat: {}, Lon: {}, Time: {}",
                 driverEmail, latitude, longitude, timestamp);
