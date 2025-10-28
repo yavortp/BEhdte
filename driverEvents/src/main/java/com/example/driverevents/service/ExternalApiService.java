@@ -29,6 +29,13 @@ public class ExternalApiService {
     private final BookingRepository bookingRepository;
     private final RestTemplate restTemplate;
 
+    // Bulgaria timezone (UTC+2 winter, UTC+3 summer - auto handles DST)
+    private static final ZoneId BULGARIA_ZONE = ZoneId.of("Europe/Sofia");
+
+    // ISO 8601 formatter with timezone
+    private static final DateTimeFormatter ISO_FORMATTER =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX");
+
     @Value("${api.external.base-url}")
     private String externalApiBaseUrl;
 
@@ -222,13 +229,22 @@ public class ExternalApiService {
         Map<String, Object> payload = new HashMap<>();
 
         // Convert timestamp to ISO-8601 with Sofia timezone offset
-        LocalDateTime driverLocal = location.getTimestamp();
-        ZoneId sofiaZone = ZoneId.of("Europe/Sofia");
-        ZonedDateTime sofiaTime = driverLocal.atZone(sofiaZone);
-        OffsetDateTime timestampWithOffset = sofiaTime.toOffsetDateTime();
-        String iso8601 = timestampWithOffset.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+//        LocalDateTime driverLocal = location.getTimestamp();
+//        ZoneId sofiaZone = ZoneId.of("Europe/Sofia");
+//        ZonedDateTime sofiaTime = driverLocal.atZone(sofiaZone);
+//        OffsetDateTime timestampWithOffset = sofiaTime.toOffsetDateTime();
+//        String iso8601 = timestampWithOffset.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
 
-        payload.put("timestamp", iso8601);
+        // Convert LocalDateTime (Bulgaria time) to UTC OffsetDateTime
+        OffsetDateTime utcTimestamp = location.getTimestamp()
+                .atZone(BULGARIA_ZONE)              // Assume timestamp is in Bulgaria timezone
+                .withZoneSameInstant(ZoneOffset.UTC) // Convert to UTC
+                .toOffsetDateTime();
+
+        // Format as ISO 8601 with timezone: "2019-08-17T13:05:42+00:00"
+        String formattedTimestamp = utcTimestamp.format(ISO_FORMATTER);
+
+        payload.put("timestamp", formattedTimestamp);
 
         // Add location coordinates
         Map<String, Object> loc = new HashMap<>();
