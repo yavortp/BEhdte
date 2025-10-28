@@ -126,14 +126,16 @@ public class LocationTrackingService {
     private void sendToWebSocket(String driverEmail, Double latitude, Double longitude, LocalDateTime timestamp) {
         try {
             Map<String, Object> locationData = new HashMap<>();
-            locationData.put("email", driverEmail);  // Changed from "username"
+            locationData.put("email", driverEmail);
             locationData.put("latitude", latitude);
             locationData.put("longitude", longitude);
             locationData.put("timestamp", timestamp.toString());
 
             // Changed topic to match frontend: /topic/location/{email}
             String topic = "/topic/location/" + driverEmail;
+            log.info("🔵 SENDING: Topic={}, Data={}", topic, locationData);
             websocket.convertAndSend(topic, locationData);
+            log.info("✅ SENT");
 
             log.debug("Sent location to WebSocket topic: {}", topic);
         } catch (Exception e) {

@@ -83,11 +83,11 @@ class LocationService {
         }
 
         try {
-            // Subscribe to correct topic: /topic/location/{email}
             const topic = `/topic/location/${driverEmail}`;
 
             const subscription = this.client.subscribe(topic, (message) => {
                 try {
+                    console.log('📥 MESSAGE RECEIVED:', message.body);
                     const update = JSON.parse(message.body) as LocationUpdate;
                     console.log(`Location update received for ${driverEmail}:`, update);
                     callback(update);
