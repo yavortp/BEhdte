@@ -60,22 +60,27 @@ const LocationMap: React.FC = () => {
     const [selectedDrivers, setSelectedDrivers] = useState<string[]>([]);
     const [locations, setLocations] = useState<Record<string, LocationUpdate>>({});
 
-    const subscriptionsRef = useRef<Set<string>>(new Set());
-    const isSubscribingRef = useRef(false);
+    // Track if we've connected to WebSocket (only connect ONCE)
+    const isConnectedRef = useRef(false);
+    // Track which drivers we've subscribed to
+    const subscribedDriversRef = useRef<Set<string>>(new Set());
 
-    // Fetch drivers list on mount
+    // Fetch drivers list on mount (ONCE)
     useEffect(() => {
         let isMounted = true;
+
+        console.log('📋 Fetching drivers...');
 
         fetch("/api/drivers")
             .then((res) => res.json())
             .then((data) => {
                 if (isMounted) {
+                    console.log('✅ Drivers loaded:', data.length, 'drivers');
                     setDrivers(data);
                 }
             })
             .catch((err) => {
-                console.error("Failed to load drivers:", err);
+                console.error('❌ Failed to load drivers:', err);
             });
 
         return () => {
@@ -84,58 +89,69 @@ const LocationMap: React.FC = () => {
     }, []);
 
     const handleLocationUpdate = useCallback((email: string, update: LocationUpdate) => {
+        console.log(`📍 Location update received for ${email}:`, update);
+
         setLocations((prev) => {
-            // Only update if the location actually changed
             const existing = prev[email];
             if (existing &&
                 existing.latitude === update.latitude &&
                 existing.longitude === update.longitude &&
                 existing.timestamp === update.timestamp) {
-                return prev; // No change, return same object to prevent re-render
+                console.log(`⏭️ Skipping duplicate for ${email}`);
+                return prev;
             }
+            console.log(`✅ Setting location for ${email}`);
             return { ...prev, [email]: update };
         });
     }, []);
 
-    // Subscribe to drivers
+    // Connect to WebSocket ONCE and subscribe to all drivers
     useEffect(() => {
-
-        if (isSubscribingRef.current || drivers.length === 0) {
+        if (drivers.length === 0 || isConnectedRef.current) {
             return;
         }
 
-        isSubscribingRef.current = true;
+        console.log('🔌 Connecting to WebSocket...');
+        isConnectedRef.current = true;
 
-        drivers.forEach((driver) => {
-            if (!subscriptionsRef.current.has(driver.email)) {
-                console.log(`Subscribing to driver: ${driver.email}`);
+        // Connect ONCE
+        locationService.connect();
 
-                locationService.subscribeToDriver(
-                    driver.email,
-                    (update: LocationUpdate) => handleLocationUpdate(driver.email, update)
-                );
+        // Wait a bit for connection to establish, then subscribe to ALL drivers
+        const timeout = setTimeout(() => {
+            console.log(`📡 Subscribing to ${drivers.length} drivers...`);
 
-                subscriptionsRef.current.add(driver.email);
-            }
-        });
+            drivers.forEach((driver) => {
+                if (!subscribedDriversRef.current.has(driver.email)) {
+                    console.log(`➕ Subscribing to: ${driver.email}`);
 
-        isSubscribingRef.current = false;
+                    locationService.subscribeToDriver(
+                        driver.email,
+                        (update: LocationUpdate) => handleLocationUpdate(driver.email, update)
+                    );
 
-        // cleanup: unsubscribe when component unmounts or drivers list changes
-        return () => {
-            console.log("Unsubscribing from all drivers");
-            subscriptionsRef.current.forEach((email) => {
-                locationService.unsubscribeFromDriver(email);
+                    subscribedDriversRef.current.add(driver.email);
+                }
             });
-            subscriptionsRef.current.clear();
+        }, 1000);
+
+        // Cleanup on unmount
+        return () => {
+            clearTimeout(timeout);
+            console.log('🔌 Disconnecting from WebSocket...');
+            locationService.disconnect();
+            isConnectedRef.current = false;
+            subscribedDriversRef.current.clear();
         };
     }, [drivers, handleLocationUpdate]);
 
-    const toggleDriver = (email: string) => {
+    const toggleDriver = useCallback((email: string) => {
         setSelectedDrivers((prev) =>
-            prev.includes(email) ? prev.filter((d) => d !== email) : [...prev, email]
+            prev.includes(email)
+                ? prev.filter((d) => d !== email)
+                : [...prev, email]
         );
-    };
+    }, []);
 
     return (
         <div className="flex h-[600px]">
