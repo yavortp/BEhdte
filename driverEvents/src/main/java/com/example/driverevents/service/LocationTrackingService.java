@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -65,8 +66,10 @@ public class LocationTrackingService {
         String driverEmail = location.getEmail();
         Double latitude = location.getLatitude();
         Double longitude = location.getLongitude();
-        OffsetDateTime timestampWithOffset = OffsetDateTime.parse((String) "location.getTimestamp()");
-        LocalDateTime timestamp = timestampWithOffset.toLocalDateTime();
+        LocalDateTime timestamp = location.getTimestamp();
+
+//        OffsetDateTime timestampWithOffset = OffsetDateTime.parse((String) "location.getTimestamp()");
+//        LocalDateTime timestamp = timestampWithOffset.toLocalDateTime();
 
         log.debug("Processing location - Driver: {}, Lat: {}, Lon: {}, Time: {}",
                 driverEmail, latitude, longitude, timestamp);
@@ -79,25 +82,22 @@ public class LocationTrackingService {
             return;
         }
 
-//        Vehicle vehicle = driver.getVehicles();
-//        if (vehicle == null) {
-//            return;
-//        }
-
         // find active booking for this driver
         Booking activeBooking = bookingRepository.findActiveBookingForDriver(driver.getId(), timestamp).orElse(null);
 
         // Send to WebSocket if connection is active
-        if (activeConnections.containsKey(driverEmail)) {
-            Map<String, Object> locationData = new HashMap<>();
-            locationData.put("username", driverEmail);
-            locationData.put("latitude", latitude);
-            locationData.put("longitude", longitude);
-            locationData.put("timestamp", timestamp.toString());
+//        if (activeConnections.containsKey(driverEmail)) {
+//            Map<String, Object> locationData = new HashMap<>();
+//            locationData.put("username", driverEmail);
+//            locationData.put("latitude", latitude);
+//            locationData.put("longitude", longitude);
+//            locationData.put("timestamp", timestamp.toString());
+//
+//            websocket.convertAndSend("/topic/location/" + driverEmail, locationData);
+//            log.debug("Sent location to WebSocket for driver: {}", driverEmail);
+//        }
 
-            websocket.convertAndSend("/topic/driver/" + driverEmail, locationData);
-            log.debug("Sent location to WebSocket for driver: {}", driverEmail);
-        }
+        sendToWebSocket(driverEmail, latitude, longitude, timestamp);
 
         // If there is an active booking, send to external API
         if (activeBooking != null) {
@@ -116,12 +116,30 @@ public class LocationTrackingService {
             }
         } else {
             log.debug("No active booking found for driver: {}", driverEmail);
+            location.setSentToApi(true);
         }
 
-        // Mark as processed
-        location.setSentToApi(true);
         locationUpdateRepository.save(location);
         log.debug("Location update {} marked as processed", location.getId());
+    }
+
+    private void sendToWebSocket(String driverEmail, Double latitude, Double longitude, LocalDateTime timestamp) {
+        try {
+            Map<String, Object> locationData = new HashMap<>();
+            locationData.put("email", driverEmail);  // Changed from "username"
+            locationData.put("latitude", latitude);
+            locationData.put("longitude", longitude);
+            locationData.put("timestamp", timestamp.toString());
+
+            // Changed topic to match frontend: /topic/location/{email}
+            String topic = "/topic/location/" + driverEmail;
+            websocket.convertAndSend(topic, locationData);
+
+            log.debug("Sent location to WebSocket topic: {}", topic);
+        } catch (Exception e) {
+            log.error("Failed to send location to WebSocket for driver {}: {}",
+                    driverEmail, e.getMessage(), e);
+        }
     }
 
     public void registerWebSocketConnection(String driverEmail) {
