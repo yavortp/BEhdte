@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { locationService, LocationUpdate } from "../services/locationService";
 import {MapContainer, TileLayer, Marker, Popup, useMap} from "react-leaflet";
 import "leaflet/dist/leaflet.css";
@@ -52,7 +52,7 @@ const AutoCenter: React.FC<AutoCenterProps> = ({ selectedDrivers, locations }) =
         map.fitBounds(bounds, { padding: [50, 50] });
     }, [selectedDrivers, locations, map]);
 
-    return null; // This component only affects the map
+    return null;
 };
 
 const LocationMap: React.FC = () => {
@@ -60,29 +60,76 @@ const LocationMap: React.FC = () => {
     const [selectedDrivers, setSelectedDrivers] = useState<string[]>([]);
     const [locations, setLocations] = useState<Record<string, LocationUpdate>>({});
 
+    const subscriptionsRef = useRef<Set<string>>(new Set());
+    const isSubscribingRef = useRef(false);
+
     // Fetch drivers list on mount
     useEffect(() => {
-        fetch("/api/drivers") // your backend endpoint
+        let isMounted = true;
+
+        fetch("/api/drivers")
             .then((res) => res.json())
-            .then(setDrivers);
+            .then((data) => {
+                if (isMounted) {
+                    setDrivers(data);
+                }
+            })
+            .catch((err) => {
+                console.error("Failed to load drivers:", err);
+            });
+
+        return () => {
+            isMounted = false;
+        };
+    }, []);
+
+    const handleLocationUpdate = useCallback((email: string, update: LocationUpdate) => {
+        setLocations((prev) => {
+            // Only update if the location actually changed
+            const existing = prev[email];
+            if (existing &&
+                existing.latitude === update.latitude &&
+                existing.longitude === update.longitude &&
+                existing.timestamp === update.timestamp) {
+                return prev; // No change, return same object to prevent re-render
+            }
+            return { ...prev, [email]: update };
+        });
     }, []);
 
     // Subscribe to drivers
     useEffect(() => {
 
+        if (isSubscribingRef.current || drivers.length === 0) {
+            return;
+        }
+
+        isSubscribingRef.current = true;
+
         drivers.forEach((driver) => {
-            locationService.subscribeToDriver(driver.email, (update: LocationUpdate) => {
-                setLocations((prev) => ({ ...prev, [driver.email]: update }));
-            });
+            if (!subscriptionsRef.current.has(driver.email)) {
+                console.log(`Subscribing to driver: ${driver.email}`);
+
+                locationService.subscribeToDriver(
+                    driver.email,
+                    (update: LocationUpdate) => handleLocationUpdate(driver.email, update)
+                );
+
+                subscriptionsRef.current.add(driver.email);
+            }
         });
+
+        isSubscribingRef.current = false;
 
         // cleanup: unsubscribe when component unmounts or drivers list changes
         return () => {
-            drivers.forEach((driver) => {
-                locationService.unsubscribeFromDriver(driver.email);
+            console.log("Unsubscribing from all drivers");
+            subscriptionsRef.current.forEach((email) => {
+                locationService.unsubscribeFromDriver(email);
             });
+            subscriptionsRef.current.clear();
         };
-    }, [drivers]);
+    }, [drivers, handleLocationUpdate]);
 
     const toggleDriver = (email: string) => {
         setSelectedDrivers((prev) =>
@@ -126,6 +173,11 @@ const LocationMap: React.FC = () => {
                         const position = loc
                             ? { lat: loc.latitude, lng: loc.longitude }
                             : defaultCenter; // fallback if no location yet
+                        // const loc = locations[email];
+                        // if (!loc) return null; // Don't show marker if no location yet
+                        //
+                        // const position = { lat: loc.latitude, lng: loc.longitude };
+                        // const driver = drivers.find((d) => d.email === email);
                         return (
                             <Marker key={email} position={position}>
                                 <Popup>
