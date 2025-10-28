@@ -6,6 +6,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
@@ -27,6 +28,15 @@ public class Driver {
     @JsonProperty("phone")
     @NotBlank
     private String phoneNumber;
+
+    @Column(length = 64)
+    private String token;  // 64-character hex token for API access
+
+    @Column(name = "token_expiry")
+    private LocalDateTime tokenExpiry;
+
+    @Column(name = "is_active")
+    private Boolean isActive = true;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "vehicle_id", nullable = true)

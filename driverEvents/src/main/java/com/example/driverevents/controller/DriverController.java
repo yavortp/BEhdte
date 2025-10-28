@@ -1,10 +1,12 @@
 package com.example.driverevents.controller;
 
+import com.example.driverevents.config.TokenGenerator;
 import com.example.driverevents.model.Driver;
 import com.example.driverevents.model.Vehicle;
 import com.example.driverevents.repository.DriverRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,6 +16,7 @@ import com.example.driverevents.repository.VehicleRepository;
 
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/drivers")
 @RequiredArgsConstructor
@@ -33,7 +36,16 @@ public class DriverController {
         } else {
             driver.setVehicles(null);
         }
+
+        driver.setToken(TokenGenerator.generateToken());
+        driver.setTokenExpiry(TokenGenerator.getDefaultExpiry());
+        driver.setIsActive(true);
+
         Driver saved = driverRepository.save(driver);
+        log.info("Driver created: {} with token expiry: {}",
+                saved.getEmail(),
+                saved.getTokenExpiry());
+
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
 
@@ -50,6 +62,7 @@ public class DriverController {
             driver.setName(updatedDriver.getName());
             driver.setPhoneNumber(updatedDriver.getPhoneNumber());
             driver.setEmail(updatedDriver.getEmail());
+            driver.setStatus(updatedDriver.getStatus());
             if (updatedDriver.getVehicles() != null && updatedDriver.getVehicles().getId() != null) {
                 Vehicle vehicle = vehicleRepository.findById(updatedDriver.getVehicles().getId())
                         .orElseThrow(() -> new RuntimeException("Vehicle not found"));
@@ -58,6 +71,21 @@ public class DriverController {
                 driver.setVehicles(null);
             }
             return ResponseEntity.ok(driverRepository.save(driver));
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
+    @PostMapping("/{id}/regenerate-token")
+    public ResponseEntity<?> regenerateToken(@PathVariable Long id) {
+        return driverRepository.findById(id).map(driver -> {
+            // Generate new token
+            driver.setToken(TokenGenerator.generateToken());
+            driver.setTokenExpiry(TokenGenerator.getDefaultExpiry());
+
+            Driver saved = driverRepository.save(driver);
+
+            log.info("Token regenerated for driver: {}", saved.getEmail());
+
+            return ResponseEntity.ok(saved);
         }).orElse(ResponseEntity.notFound().build());
     }
 
