@@ -5,6 +5,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotWritableException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -31,6 +32,21 @@ public class GlobalExceptionHandler {
                 correlationId,
                 HttpStatus.BAD_REQUEST.value()
         ));
+    }
+
+    @ExceptionHandler(HttpMessageNotWritableException.class)
+    public ResponseEntity<String> handleMessageNotWritableException(
+            HttpMessageNotWritableException ex,
+            HttpServletRequest request) {
+
+        // SockJS frame request - just return empty response
+        if (request.getRequestURI().contains("/ws/")) {
+            return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+        }
+
+        log.error("HttpMessageNotWritableException: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Error processing request");
     }
 
     @ExceptionHandler(value = { EntityNotFoundException.class })

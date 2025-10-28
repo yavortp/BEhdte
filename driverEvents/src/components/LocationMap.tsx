@@ -170,9 +170,9 @@ const LocationMap: React.FC = () => {
 
                     {selectedDrivers.map((email) => {
                         const loc = locations[email];
-                        const position = loc
-                            ? { lat: loc.latitude, lng: loc.longitude }
-                            : defaultCenter; // fallback if no location yet
+                        if (!loc) return null;
+                        const position = { lat: loc.latitude, lng: loc.longitude };
+                        const driver = drivers.find((d) => d.email === email);
                         // const loc = locations[email];
                         // if (!loc) return null; // Don't show marker if no location yet
                         //
@@ -181,11 +181,14 @@ const LocationMap: React.FC = () => {
                         return (
                             <Marker key={email} position={position}>
                                 <Popup>
-                                    <strong>{drivers.find((d) => d.email === email)?.name || email}</strong>
-                                    <br />
-                                    {loc
-                                        ? `Last update: ${new Date(loc.timestamp).toLocaleTimeString()}`
-                                        : "No location yet"}
+                                    <div className="text-sm">
+                                        <strong className="block mb-1">
+                                            {driver?.name || email}
+                                        </strong>
+                                        <span className="text-gray-600">
+                                            Last update: {new Date(loc.timestamp).toLocaleString()}
+                                        </span>
+                                    </div>
                                 </Popup>
                             </Marker>
                         );
