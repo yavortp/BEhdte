@@ -2,6 +2,8 @@ package com.example.driverevents.model;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
+
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import jakarta.persistence.*;
@@ -82,6 +84,14 @@ public class Booking {
         WAITING_FOR_CUSTOMER,
         AFTER_PICKUP,
         COMPLETED
+    }
+
+    // Helper method to parse the European date format
+    @Transient
+    public LocalDate getParsedBookingDate() {
+        if (bookingDate == null) return null;
+        return LocalDate.parse(bookingDate,
+                java.time.format.DateTimeFormatter.ofPattern("dd.MM.yyyy"));
     }
 
     public Boolean getSyncedWithApi() {

@@ -22,8 +22,8 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
         SELECT b.* FROM bookings b 
         WHERE b.driver_id = :driverId 
         AND :timestamp BETWEEN 
-            (b.booking_date::date + b.start_time - interval '30 minutes') AND 
-            (b.booking_date::date + b.start_time + interval '2 hours')
+            (TO_DATE(b.booking_date, 'DD.MM.YYYY') + b.start_time - interval '30 minutes') AND
+            (TO_DATE(b.booking_date, 'DD.MM.YYYY') + b.start_time + interval '2 hours')
         LIMIT 1
         """, nativeQuery = true)
     Optional<Booking> findActiveBookingForDriver(@Param("driverId") Long driverId,
