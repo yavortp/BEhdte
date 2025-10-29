@@ -234,7 +234,8 @@ public class ExternalApiService {
                 .withZoneSameInstant(ZoneOffset.UTC) // Convert to UTC
                 .toOffsetDateTime();
 
-        String formattedTimestamp = utcTimestamp.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'+00:00'");
+        String formattedTimestamp = utcTimestamp.format(formatter);
 
         payload.put("timestamp", formattedTimestamp);
 
