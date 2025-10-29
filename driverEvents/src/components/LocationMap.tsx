@@ -61,9 +61,7 @@ const LocationMap: React.FC = () => {
     const [locations, setLocations] = useState<Record<string, LocationUpdate>>({});
 
     // Track if we've connected to WebSocket (only connect ONCE)
-    const isConnectedRef = useRef(false);
-    // Track which drivers we've subscribed to
-    const subscribedDriversRef = useRef<Set<string>>(new Set());
+    const isInitializedRef = useRef(false);
 
     // Fetch drivers list on mount (ONCE)
     useEffect(() => {
@@ -107,41 +105,33 @@ const LocationMap: React.FC = () => {
 
     // Connect to WebSocket ONCE and subscribe to all drivers
     useEffect(() => {
-        if (drivers.length === 0 || isConnectedRef.current) {
+        if (drivers.length === 0 || isInitializedRef.current) {
             return;
         }
 
         console.log('🔌 Connecting to WebSocket...');
-        isConnectedRef.current = true;
+        isInitializedRef.current = true;
 
         // Connect ONCE
         locationService.connect();
 
-        // Wait a bit for connection to establish, then subscribe to ALL drivers
-        const timeout = setTimeout(() => {
-            console.log(`📡 Subscribing to ${drivers.length} drivers...`);
+        drivers.forEach((driver) => {
+            locationService.registerCallback(
+                driver.email,
+                (update: LocationUpdate) => handleLocationUpdate(driver.email, update)
+            );
+        });
 
-            drivers.forEach((driver) => {
-                if (!subscribedDriversRef.current.has(driver.email)) {
-                    console.log(`➕ Subscribing to: ${driver.email}`);
-
-                    locationService.subscribeToDriver(
-                        driver.email,
-                        (update: LocationUpdate) => handleLocationUpdate(driver.email, update)
-                    );
-
-                    subscribedDriversRef.current.add(driver.email);
-                }
-            });
-        }, 1000);
+        console.log(`✅ Registered callbacks for ${drivers.length} drivers`);
 
         // Cleanup on unmount
         return () => {
-            clearTimeout(timeout);
-            console.log('🔌 Disconnecting from WebSocket...');
+            console.log('🧹 Cleaning up location tracking...');
+            drivers.forEach((driver) => {
+                locationService.unregisterCallback(driver.email);
+            });
             locationService.disconnect();
-            isConnectedRef.current = false;
-            subscribedDriversRef.current.clear();
+            isInitializedRef.current = false;
         };
     }, [drivers, handleLocationUpdate]);
 

@@ -10,14 +10,17 @@ export interface LocationUpdate {
 
 class LocationService {
     private client: Client | null = null;
-    private subscriptions: Map<string, StompSubscription> = new Map();
-    private pendingCallbacks: Map<string, (update: LocationUpdate) => void> = new Map();
+    private globalSubscription: StompSubscription | null = null;
+    private callbacks: Map<string, (update: LocationUpdate) => void> = new Map();
+    private isConnecting = false;
 
     connect() {
         // Don't reconnect if already connected
-        if (this.client?.connected) {
+        if (this.client?.connected || this.isConnecting) {
             return;
         }
+
+        this.isConnecting = true;
 
         this.client = new Client({
             webSocketFactory: () => new SockJS('/ws', null, {
@@ -32,19 +35,21 @@ class LocationService {
             onConnect: () => {
                 console.log('✅ WebSocket Connected');
 
-                // Resubscribe to all pending subscriptions
-                this.pendingCallbacks.forEach((callback, driverEmail) => {
-                    this.subscribeToDriver(driverEmail, callback);
-                });
-                this.pendingCallbacks.clear();
+                this.isConnecting = false;
+
+                // Subscribe to the SINGLE topic that receives ALL driver updates
+                this.subscribeToAllDrivers();
             },
 
             onDisconnect: () => {
                 console.log('WebSocket Disconnected');
+                this.isConnecting = false;
+                this.globalSubscription = null;
             },
 
             onStompError: (frame) => {
                 console.error('❌ WebSocket Error:', frame.headers['message']);
+                this.isConnecting = false;
             },
 
             debug: (str) => {
@@ -57,68 +62,73 @@ class LocationService {
         this.client.activate();
     }
 
-    disconnect() {
-        if (this.client) {
-            // Unsubscribe from all
-            this.subscriptions.forEach((sub) => sub.unsubscribe());
-            this.subscriptions.clear();
-
-            this.client.deactivate();
-            this.client = null;
-            console.log('WebSocket disconnected');
-        }
-    }
-
-    subscribeToDriver(driverEmail: string, callback: (update: LocationUpdate) => void) {
-        if (this.subscriptions.has(driverEmail)) {
-            console.log(`Already subscribed to: ${driverEmail}`);
+    private subscribeToAllDrivers() {
+        if (!this.client?.connected) {
+            console.error('Cannot subscribe: client not connected');
             return;
         }
 
-        // If not connected, store callback and connect
-        if (!this.client?.connected) {
-            this.pendingCallbacks.set(driverEmail, callback);
-            this.connect();
+        if (this.globalSubscription) {
+            console.log('Already subscribed to /topic/location');
             return;
         }
 
         try {
-            const topic = `/topic/location/${driverEmail}`;
+            // Subscribe to the single topic that receives ALL driver location updates
+            const topic = '/topic/location';
 
-            const subscription = this.client.subscribe(topic, (message) => {
+            this.globalSubscription = this.client.subscribe(topic, (message) => {
                 try {
-                    console.log('📥 MESSAGE RECEIVED:', message.body);
                     const update = JSON.parse(message.body) as LocationUpdate;
-                    console.log(`Location update received for ${driverEmail}:`, update);
-                    callback(update);
+                    console.log('📍 Location update received:', update);
+
+                    // Call the callback for this specific driver
+                    const callback = this.callbacks.get(update.email);
+                    if (callback) {
+                        callback(update);
+                    } else {
+                        console.log(`No callback registered for driver: ${update.email}`);
+                    }
                 } catch (error) {
-                    console.error('Failed to parse location update:', error);
+                    console.error('Failed to parse location update:', error, message.body);
                 }
             });
 
-            this.subscriptions.set(driverEmail, subscription);
-            console.log(`✅ Subscribed to driver: ${driverEmail} on topic: ${topic}`);
+            console.log(`✅ Subscribed to ${topic} for ALL drivers`);
 
         } catch (error) {
-            console.error(`Failed to subscribe to ${driverEmail}:`, error);
+            console.error('Failed to subscribe to location updates:', error);
         }
     }
 
-    unsubscribeFromDriver(driverEmail: string) {
-        const subscription = this.subscriptions.get(driverEmail);
+    registerCallback(driverEmail: string, callback: (update: LocationUpdate) => void) {
+        console.log(`📝 Registering callback for driver: ${driverEmail}`);
+        this.callbacks.set(driverEmail, callback);
 
-        if (subscription) {
-            subscription.unsubscribe();
-            this.subscriptions.delete(driverEmail);
-            console.log(`Unsubscribed from driver: ${driverEmail}`);
+        // Connect if not already connected
+        if (!this.client?.connected && !this.isConnecting) {
+            this.connect();
         }
+    }
 
-        // Remove from pending callbacks if exists
-        this.pendingCallbacks.delete(driverEmail);
+    unregisterCallback(driverEmail: string) {
+        console.log(`🗑️ Unregistering callback for driver: ${driverEmail}`);
+        this.callbacks.delete(driverEmail);
+    }
 
-        // Disconnect if no more subscriptions
-        if (this.subscriptions.size === 0 && this.pendingCallbacks.size === 0 && this.client) {
-            this.disconnect();
+    disconnect() {
+        if (this.client) {
+            // Unsubscribe from the global topic
+            if (this.globalSubscription) {
+                this.globalSubscription.unsubscribe();
+                this.globalSubscription = null;
+            }
+
+            this.callbacks.clear();
+            this.client.deactivate();
+            this.client = null;
+            this.isConnecting = false;
+            console.log('🔌 WebSocket fully disconnected');
         }
     }
 
@@ -127,9 +137,8 @@ class LocationService {
         return this.client?.connected || false;
     }
 
-    // Get active subscription count
-    getActiveSubscriptions(): number {
-        return this.subscriptions.size;
+    getActiveCallbacks(): number {
+        return this.callbacks.size;
     }
 }
 
