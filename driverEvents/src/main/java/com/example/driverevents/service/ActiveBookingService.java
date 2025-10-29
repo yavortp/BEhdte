@@ -40,10 +40,8 @@ public class ActiveBookingService {
             try {
                 LocalDate bookingDate = LocalDate.parse(b.getBookingDate(),
                         DateTimeFormatter.ofPattern("dd.MM.yyyy"));
-                log.info("Booking date: " + bookingDate);
 
                 LocalDateTime startDateTime = LocalDateTime.of(bookingDate, b.getStartTime());
-                log.info("Start time: " + startDateTime);
 
                 Integer durationMinutes = destinationsRepository
                         .findDuration(b.getStartLocation().toUpperCase(), b.getDestination().toUpperCase());
@@ -51,11 +49,8 @@ public class ActiveBookingService {
                     System.out.println("No duration found for "+ b.getStartLocation() + " - " + b.getDestination());
                     continue;
                 }
-                log.info("Duration: " + durationMinutes);
 
                 LocalDateTime endDateTime = startDateTime.plusMinutes(durationMinutes);
-
-                log.info("End time: " + endDateTime);
 
                 // Booking is active if we are within [startTime - 30 min, endTime]
                 if (!now.isBefore(startDateTime.minusMinutes(30)) && !now.isAfter(endDateTime)) {
