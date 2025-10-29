@@ -102,7 +102,6 @@ class LocationService {
     }
 
     registerCallback(driverEmail: string, callback: (update: LocationUpdate) => void) {
-        console.log(`📝 Registering callback for driver: ${driverEmail}`);
         this.callbacks.set(driverEmail, callback);
 
         // Connect if not already connected
@@ -112,7 +111,6 @@ class LocationService {
     }
 
     unregisterCallback(driverEmail: string) {
-        console.log(`🗑️ Unregistering callback for driver: ${driverEmail}`);
         this.callbacks.delete(driverEmail);
     }
 

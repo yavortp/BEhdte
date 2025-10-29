@@ -68,9 +68,6 @@ public class LocationTrackingService {
         Double longitude = location.getLongitude();
         LocalDateTime timestamp = location.getTimestamp();
 
-//        OffsetDateTime timestampWithOffset = OffsetDateTime.parse((String) "location.getTimestamp()");
-//        LocalDateTime timestamp = timestampWithOffset.toLocalDateTime();
-
         log.debug("Processing location - Driver: {}, Lat: {}, Lon: {}, Time: {}",
                 driverEmail, latitude, longitude, timestamp);
 
@@ -85,18 +82,6 @@ public class LocationTrackingService {
         // find active booking for this driver
         Booking activeBooking = bookingRepository.findActiveBookingForDriver(driver.getId(), timestamp).orElse(null);
 
-        // Send to WebSocket if connection is active
-//        if (activeConnections.containsKey(driverEmail)) {
-//            Map<String, Object> locationData = new HashMap<>();
-//            locationData.put("username", driverEmail);
-//            locationData.put("latitude", latitude);
-//            locationData.put("longitude", longitude);
-//            locationData.put("timestamp", timestamp.toString());
-//
-//            websocket.convertAndSend("/topic/location/" + driverEmail, locationData);
-//            log.debug("Sent location to WebSocket for driver: {}", driverEmail);
-//        }
-
         sendToWebSocket(driverEmail, latitude, longitude, timestamp);
 
         // If there is an active booking, send to external API
@@ -106,8 +91,6 @@ public class LocationTrackingService {
                         activeBooking.getBookingNumber());
                 externalApiService.sendLocationUpdate(activeBooking, location);
                 location.setSentToApi(true);
-                log.info("Successfully sent location to external API for booking: {}",
-                        activeBooking.getBookingNumber());
             } catch (Exception e) {
                 log.error("Failed to send location update to external API for booking {}: {}",
                         activeBooking.getBookingNumber(), e.getMessage(), e);
@@ -132,7 +115,7 @@ public class LocationTrackingService {
             locationData.put("timestamp", timestamp.toString());
 
             // Changed topic to match frontend: /topic/location/{email}
-            String topic = "/topic/location/" + driverEmail;
+            String topic = "/topic/location/";
             websocket.convertAndSend(topic, locationData);
 
         } catch (Exception e) {
