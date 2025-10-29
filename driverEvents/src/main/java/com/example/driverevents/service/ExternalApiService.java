@@ -228,21 +228,13 @@ public class ExternalApiService {
     private Map<String, Object> buildLocationPayload(LocationUpdateFromDrivers location) {
         Map<String, Object> payload = new HashMap<>();
 
-        // Convert timestamp to ISO-8601 with Sofia timezone offset
-//        LocalDateTime driverLocal = location.getTimestamp();
-//        ZoneId sofiaZone = ZoneId.of("Europe/Sofia");
-//        ZonedDateTime sofiaTime = driverLocal.atZone(sofiaZone);
-//        OffsetDateTime timestampWithOffset = sofiaTime.toOffsetDateTime();
-//        String iso8601 = timestampWithOffset.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
-
         // Convert LocalDateTime (Bulgaria time) to UTC OffsetDateTime
         OffsetDateTime utcTimestamp = location.getTimestamp()
                 .atZone(BULGARIA_ZONE)              // Assume timestamp is in Bulgaria timezone
                 .withZoneSameInstant(ZoneOffset.UTC) // Convert to UTC
                 .toOffsetDateTime();
 
-        // Format as ISO 8601 with timezone: "2019-08-17T13:05:42+00:00"
-        String formattedTimestamp = utcTimestamp.format(ISO_FORMATTER);
+        String formattedTimestamp = utcTimestamp.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
 
         payload.put("timestamp", formattedTimestamp);
 

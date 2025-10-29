@@ -133,11 +133,8 @@ public class LocationTrackingService {
 
             // Changed topic to match frontend: /topic/location/{email}
             String topic = "/topic/location/" + driverEmail;
-            log.info("🔵 SENDING: Topic={}, Data={}", topic, locationData);
             websocket.convertAndSend(topic, locationData);
-            log.info("✅ SENT");
 
-            log.debug("Sent location to WebSocket topic: {}", topic);
         } catch (Exception e) {
             log.error("Failed to send location to WebSocket for driver {}: {}",
                     driverEmail, e.getMessage(), e);

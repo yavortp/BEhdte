@@ -5,6 +5,7 @@ import com.example.driverevents.model.BookingWindow;
 import com.example.driverevents.repository.ActiveBookingsRepository;
 import com.example.driverevents.repository.DestinationsRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -17,6 +18,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @EnableScheduling
 @RequiredArgsConstructor
@@ -38,11 +40,15 @@ public class ActiveBookingService {
             try {
                 LocalDate bookingDate = LocalDate.parse(b.getBookingDate(),
                         DateTimeFormatter.ofPattern("dd.MM.yyyy"));
+                log.info("Booking date: " + bookingDate);
 
                 LocalDateTime startDateTime = LocalDateTime.of(bookingDate, b.getStartTime());
+                log.info("Start time: " + startDateTime);
+                log.info("Start location: " + b.getStartLocation().toUpperCase());
+                log.info("Destination: " + b.getDestination());
 
                 Integer durationMinutes = destinationsRepository
-                        .findDuration(b.getStartLocation(), b.getDestination());
+                        .findDuration(b.getStartLocation().toUpperCase(), b.getDestination().toUpperCase());
                 if (durationMinutes == null) {
                     System.out.println("No duration found for "+ b.getStartLocation() + " - " + b.getDestination());
                     continue;
