@@ -25,7 +25,6 @@ interface Driver {
 // Default drivers locations
 const defaultCenter = { lat: 42.146637, lng: 24.716829 };
 
-
 interface AutoCenterProps {
     selectedDrivers: string[];
     locations: Record<string, LocationUpdate>;
@@ -109,17 +108,19 @@ const LocationMap: React.FC = () => {
             return;
         }
 
-        console.log('🔌 Connecting to WebSocket...');
+        console.log('🔌 Initializing location tracking...');
         isInitializedRef.current = true;
 
         // Connect ONCE
         locationService.connect();
 
+        const registeredDrivers: string[] = [];
         drivers.forEach((driver) => {
             locationService.registerCallback(
                 driver.email,
                 (update: LocationUpdate) => handleLocationUpdate(driver.email, update)
             );
+            registeredDrivers.push(driver.email);
         });
 
         console.log(`✅ Registered callbacks for ${drivers.length} drivers`);
@@ -127,13 +128,13 @@ const LocationMap: React.FC = () => {
         // Cleanup on unmount
         return () => {
             console.log('🧹 Cleaning up location tracking...');
-            drivers.forEach((driver) => {
-                locationService.unregisterCallback(driver.email);
+            registeredDrivers.forEach((email) => {
+                locationService.unregisterCallback(email);
             });
             locationService.disconnect();
             isInitializedRef.current = false;
         };
-    }, [drivers, handleLocationUpdate]);
+    }, [drivers]);
 
     const toggleDriver = useCallback((email: string) => {
         setSelectedDrivers((prev) =>
@@ -146,18 +147,33 @@ const LocationMap: React.FC = () => {
     return (
         <div className="flex h-[600px]">
             {/* Sidebar with checkboxes */}
-            <div className="w-64 p-4 border-r overflow-y-auto">
-                <h2 className="font-semibold mb-2">Drivers</h2>
-                {drivers.map((d) => (
-                    <label key={d.email} className="flex items-center space-x-2 mb-1">
-                        <input
-                            type="checkbox"
-                            checked={selectedDrivers.includes(d.email)}
-                            onChange={() => toggleDriver(d.email)}
-                        />
-                        <span>{d.name || d.email}</span>
-                    </label>
-                ))}
+            <div className="w-64 p-4 border-r overflow-y-auto bg-white">
+                <h2 className="font-semibold mb-3 text-lg">Drivers</h2>
+                <div className="text-xs text-gray-500 mb-2">
+                    {locationService.isConnected() ? '🟢 Connected' : '🔴 Disconnected'}
+                </div>
+                {drivers.map((d) => {
+                    const hasLocation = !!locations[d.email];
+                    return (
+                        <label
+                            key={d.email}
+                            className="flex items-center space-x-2 mb-2 p-1 hover:bg-gray-50 rounded cursor-pointer"
+                        >
+                            <input
+                                type="checkbox"
+                                checked={selectedDrivers.includes(d.email)}
+                                onChange={() => toggleDriver(d.email)}
+                                className="cursor-pointer"
+                            />
+                            <span className="flex-1">
+                                {d.name || d.email}
+                            </span>
+                            {hasLocation && (
+                                <span className="text-green-500 text-xs">📍</span>
+                            )}
+                        </label>
+                    );
+                })}
             </div>
 
             {/* Map */}
@@ -176,14 +192,14 @@ const LocationMap: React.FC = () => {
 
                     {selectedDrivers.map((email) => {
                         const loc = locations[email];
-                        if (!loc) return null;
+                        if (!loc) {
+                            console.log(`⚠️ No location data for ${email}`);
+                            return null;
+                        }
+
                         const position = { lat: loc.latitude, lng: loc.longitude };
                         const driver = drivers.find((d) => d.email === email);
-                        // const loc = locations[email];
-                        // if (!loc) return null; // Don't show marker if no location yet
-                        //
-                        // const position = { lat: loc.latitude, lng: loc.longitude };
-                        // const driver = drivers.find((d) => d.email === email);
+
                         return (
                             <Marker key={email} position={position}>
                                 <Popup>
@@ -191,9 +207,13 @@ const LocationMap: React.FC = () => {
                                         <strong className="block mb-1">
                                             {driver?.name || email}
                                         </strong>
-                                        <span className="text-gray-600">
-                                            Last update: {new Date(loc.timestamp).toLocaleString()}
-                                        </span>
+                                        <div className="text-gray-600 text-xs">
+                                            <div>Lat: {loc.latitude.toFixed(6)}</div>
+                                            <div>Lng: {loc.longitude.toFixed(6)}</div>
+                                            <div className="mt-1">
+                                                Last update: {new Date(loc.timestamp).toLocaleString()}
+                                            </div>
+                                        </div>
                                     </div>
                                 </Popup>
                             </Marker>

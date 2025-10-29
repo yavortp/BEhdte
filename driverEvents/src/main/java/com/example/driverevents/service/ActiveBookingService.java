@@ -29,7 +29,7 @@ public class ActiveBookingService {
 
     private final Map<Long, BookingWindow> activeBookingsCache = new ConcurrentHashMap<>();
 
-    @Scheduled(fixedRate = 60000) // every 1 min
+    @Scheduled(fixedRate = 300000) // every 5 mins
     public void refreshActiveBookings() {
         String today = LocalDate.now().format(DateTimeFormatter.ofPattern("dd.MM.yyyy"));
         List<Booking> todaysBookings = activeBookingsRepository.findBookingsForDate(today);
@@ -44,8 +44,6 @@ public class ActiveBookingService {
 
                 LocalDateTime startDateTime = LocalDateTime.of(bookingDate, b.getStartTime());
                 log.info("Start time: " + startDateTime);
-                log.info("Start location: " + b.getStartLocation().toUpperCase());
-                log.info("Destination: " + b.getDestination());
 
                 Integer durationMinutes = destinationsRepository
                         .findDuration(b.getStartLocation().toUpperCase(), b.getDestination().toUpperCase());
@@ -53,8 +51,11 @@ public class ActiveBookingService {
                     System.out.println("No duration found for "+ b.getStartLocation() + " - " + b.getDestination());
                     continue;
                 }
+                log.info("Duration: " + durationMinutes);
 
                 LocalDateTime endDateTime = startDateTime.plusMinutes(durationMinutes);
+
+                log.info("End time: " + endDateTime);
 
                 // Booking is active if we are within [startTime - 30 min, endTime]
                 if (!now.isBefore(startDateTime.minusMinutes(30)) && !now.isAfter(endDateTime)) {
