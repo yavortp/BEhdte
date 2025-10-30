@@ -115,7 +115,7 @@ public class LocationTrackingService {
             locationData.put("longitude", longitude);
             locationData.put("timestamp", timestamp.toString());
 
-            String topic = "/topic/location/";
+            String topic = "/topic/location";
 
             log.info("📤 About to call websocket.convertAndSend - Topic: {}, Data: {}", topic, locationData);
             websocket.convertAndSend(topic, locationData);
