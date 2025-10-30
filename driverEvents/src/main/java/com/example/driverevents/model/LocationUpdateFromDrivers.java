@@ -36,6 +36,6 @@ public class LocationUpdateFromDrivers {
     private LocalDateTime timestamp;
 
     @Column
-    private Boolean sentToApi = false;
+    private Boolean sentToApi;
 
 }
