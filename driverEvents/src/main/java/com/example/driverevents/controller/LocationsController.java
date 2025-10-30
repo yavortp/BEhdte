@@ -32,10 +32,10 @@ public class LocationsController {
             newLocation.setLatitude(payload.getLatitude());
             newLocation.setLongitude(payload.getLongitude());
             newLocation.setTimestamp(payload.getTimestamp());
-            newLocation.setSentToApi(false);
+            newLocation.setSentToApi(null);
             locationUpdateRepository.save(newLocation);
 
-            // ✅ Now it’s safe to use payload + user info
+            //Now it’s safe to use payload + user info
             return ResponseEntity.ok("Location accepted");
 
         } catch (FirebaseAuthException e) {

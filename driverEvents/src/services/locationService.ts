@@ -77,14 +77,23 @@ class LocationService {
             // Subscribe to the single topic that receives ALL driver location updates
             const topic = '/topic/location';
 
+            console.log(`🔔 Subscribing to topic: ${topic}`);
+
             this.globalSubscription = this.client.subscribe(topic, (message) => {
+                console.log('📥 RAW MESSAGE RECEIVED:', message);
+                console.log('📥 MESSAGE BODY:', message.body);
                 try {
                     const update = JSON.parse(message.body) as LocationUpdate;
+                    console.log('📍 PARSED Location update:', update);
+                    console.log('   - Email:', update.email);
+                    console.log('   - Lat/Lng:', update.latitude, update.longitude);
+                    console.log('   - Timestamp:', update.timestamp);
                     console.log('📍 Location update received:', update);
 
                     // Call the callback for this specific driver
                     const callback = this.callbacks.get(update.email);
                     if (callback) {
+                        console.log(`✅ Calling callback for driver: ${update.email}`);
                         callback(update);
                     } else {
                         console.log(`No callback registered for driver: ${update.email}`);
@@ -102,6 +111,7 @@ class LocationService {
     }
 
     registerCallback(driverEmail: string, callback: (update: LocationUpdate) => void) {
+        console.log(`📝 Registering callback for driver: ${driverEmail}`);
         this.callbacks.set(driverEmail, callback);
 
         // Connect if not already connected
@@ -111,6 +121,7 @@ class LocationService {
     }
 
     unregisterCallback(driverEmail: string) {
+        console.log(`🗑️ Unregistering callback for driver: ${driverEmail}`);
         this.callbacks.delete(driverEmail);
     }
 
