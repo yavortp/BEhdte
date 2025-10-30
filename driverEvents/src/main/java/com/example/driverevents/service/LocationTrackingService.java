@@ -107,6 +107,7 @@ public class LocationTrackingService {
     }
 
     private void sendToWebSocket(String driverEmail, Double latitude, Double longitude, LocalDateTime timestamp) {
+        log.info("🔔 ATTEMPTING to send location to WebSocket for driver: {}", driverEmail);
         try {
             Map<String, Object> locationData = new HashMap<>();
             locationData.put("email", driverEmail);
@@ -115,11 +116,15 @@ public class LocationTrackingService {
             locationData.put("timestamp", timestamp.toString());
 
             String topic = "/topic/location/";
+
+            log.info("📤 About to call websocket.convertAndSend - Topic: {}, Data: {}", topic, locationData);
             websocket.convertAndSend(topic, locationData);
+            log.info("✅ SUCCESSFULLY sent location to WebSocket topic: {} - Driver: {}", topic, driverEmail);
 
         } catch (Exception e) {
             log.error("Failed to send location to WebSocket for driver {}: {}",
                     driverEmail, e.getMessage(), e);
+            e.printStackTrace();
         }
     }
 
