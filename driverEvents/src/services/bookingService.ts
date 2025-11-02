@@ -4,7 +4,7 @@ export interface Booking {
     id: string;
     bookingNumber: string;
     startTime: string;
-    bookingDate: string;
+    bookingDate: string | Date;
     destination: string;
     driverId?: number | null;
     driverName?: string;
@@ -46,7 +46,9 @@ export const fetchBookings = async (): Promise<Booking[]> => {
     return rawBookings.map((booking: Booking) => {
         return {
             ...booking,
-            bookingDate: normalizeBookingDate(booking.bookingDate),
+            bookingDate: typeof booking.bookingDate === 'string'
+                ? normalizeBookingDate(booking.bookingDate)
+                : booking.bookingDate,
             startTime: booking.startTime.toString(),
         };
     });

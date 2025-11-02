@@ -87,6 +87,17 @@ const Bookings: React.FC = () => {
         return null;
     };
 
+    const getBookingDate = (booking: Booking): Date | null => {
+        if (booking.bookingDate instanceof Date) {
+            return booking.bookingDate;
+        }
+        if (typeof booking.bookingDate === 'string') {
+            const parsed = parse(booking.bookingDate, 'dd.MM.yyyy', new Date());
+            return isValid(parsed) ? parsed : null;
+        }
+        return null;
+    };
+
     // 1. Group bookings by date, then sort by time within each date
     const groupedSortedBookings: Record<string, Booking[]> = {};
 
@@ -167,25 +178,34 @@ const Bookings: React.FC = () => {
             switch (dateFilter) {
                 case 'today':
                     filtered = filtered.filter(booking => {
-                        const bookingDate = new Date(booking.startTime);
+                        const bookingDate = getBookingDate(booking);
+                        if (!bookingDate) return false;
                         return bookingDate >= today && bookingDate < tomorrow;
                     });
                     break;
                 case 'upcoming':
-                    filtered = filtered.filter(booking => new Date(booking.startTime) > now);
+                    filtered = filtered.filter(booking => {
+                        const bookingDate = getBookingDate(booking);
+                        if (!bookingDate) return false;
+                        return bookingDate >= today;
+                    });
                     break;
                 case 'this-week':
                     filtered = filtered.filter(booking => {
-                        const bookingDate = new Date(booking.startTime);
+                        const bookingDate = getBookingDate(booking);
+                        if (!bookingDate) return false;
                         return bookingDate >= today && bookingDate < weekFromNow;
                     });
                     break;
                 case 'past':
-                    filtered = filtered.filter(booking => new Date(booking.startTime) < now);
+                    filtered = filtered.filter(booking => {
+                        const bookingDate = getBookingDate(booking);
+                        if (!bookingDate) return false;
+                        return bookingDate < today;
+                    });
                     break;
             }
         }
-
         setFilteredBookings(filtered);
     };
 
@@ -492,8 +512,13 @@ const Bookings: React.FC = () => {
                                     <div className="flex items-center text-sm text-gray-900">
                                         <Calendar className="h-4 w-4 mr-2 text-gray-400" />
                                         <div>
-                                            <div>{booking.bookingDate && !isNaN(Date.parse(booking.bookingDate))
-                                                ? format(new Date(booking.bookingDate), 'dd MMM yyyy')
+                                            <div>{booking.bookingDate
+                                                ? format(
+                                                    booking.bookingDate instanceof Date
+                                                        ? booking.bookingDate
+                                                        : new Date(booking.bookingDate),
+                                                    'dd MMM yyyy'
+                                                )
                                                 : '—'}</div>
                                             <div className="text-gray-500">
                                                 {booking.startTime

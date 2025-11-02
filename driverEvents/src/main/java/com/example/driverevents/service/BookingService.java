@@ -4,10 +4,7 @@ import com.example.driverevents.model.Booking;
 import com.example.driverevents.model.Driver;
 import com.example.driverevents.model.ExternalBookingDTO;
 import com.example.driverevents.model.Vehicle;
-import com.example.driverevents.repository.BookingRepository;
-import com.example.driverevents.repository.DriverRepository;
-import com.example.driverevents.repository.LocationUpdateRepository;
-import com.example.driverevents.repository.VehicleRepository;
+import com.example.driverevents.repository.*;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -28,7 +25,7 @@ public class BookingService {
 
     private final BookingRepository bookingRepository;
     private final DriverRepository driverRepository;
-    private final LocationUpdateRepository locationUpdateRepository;
+    private final SentLocationsToExternalApiRepository sentLocationsToExternalApiRepository;
 
     public List<Booking> getAllBookings() {
         List<Booking> bookings = bookingRepository.findAll();
@@ -85,7 +82,6 @@ public class BookingService {
     @Transactional
     public void deleteBooking(Long id) {
         Booking booking = getBookingById(id);
-        locationUpdateRepository.deleteByBookingId(id);
         bookingRepository.delete(booking);
     }
 
@@ -146,17 +142,11 @@ public class BookingService {
 
         log.info("Starting bulk delete for {} bookings", ids.size());
 
-        // Delete location updates for all bookings first
-        for (Long bookingId : ids) {
-            try {
-                int deletedLocationUpdates = locationUpdateRepository.deleteByBookingId(bookingId);
-                log.debug("Deleted {} location updates for booking {}", deletedLocationUpdates, bookingId);
-            } catch (Exception e) {
-                log.warn("Error deleting location updates for booking {}: {}", bookingId, e.getMessage());
-            }
-        }
+        // Delete all location updates in one efficient query
+        int deletedLocations = sentLocationsToExternalApiRepository.deleteByBookingIdIn(ids);
+        log.info("Deleted {} location updates for {} bookings", deletedLocations, ids.size());
 
-        // Now delete the bookings
+        // Delete the bookings
         bookingRepository.deleteAllByIdIn(ids);
         log.info("Successfully deleted {} bookings", ids.size());
     }
