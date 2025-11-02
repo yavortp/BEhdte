@@ -17,7 +17,7 @@ const Bookings: React.FC = () => {
     const [dateFilter, setDateFilter] = useState<string>('all');
     const [selectedBookings, setSelectedBookings] = useState<string[]>([]);
     const [page, setPage] = useState(1);
-    const [pageSize] = useState(20);            // change bookings per page here!!!
+    const [pageSize] = useState(30);            // change bookings per page here!!!
 
     useEffect(() => {
         const loadBookings = async () => {
@@ -25,7 +25,7 @@ const Bookings: React.FC = () => {
                 const res = await fetch(`/api/bookings?page=${page}&size=${pageSize}`);
 
                 if (!res.ok) {
-                    const errorText = await res.text(); // Read raw response
+                    const errorText = await res.text();                         // Read raw response
                     console.error(`Server error ${res.status}:`, errorText);
                     return;
                 }
@@ -101,10 +101,7 @@ const Bookings: React.FC = () => {
             groupedSortedBookings[dateKey] = [];
         }
 
-        groupedSortedBookings[dateKey].push({
-            ...booking,
-            bookingDate: normalizedDate, // optional: keep normalized for later use
-        });
+        groupedSortedBookings[dateKey].push(booking);
     });
 
 // 2. Sort each date's bookings by start time

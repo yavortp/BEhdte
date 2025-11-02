@@ -6,10 +6,12 @@ import com.example.driverevents.model.ExternalBookingDTO;
 import com.example.driverevents.model.Vehicle;
 import com.example.driverevents.repository.BookingRepository;
 import com.example.driverevents.repository.DriverRepository;
+import com.example.driverevents.repository.LocationUpdateRepository;
 import com.example.driverevents.repository.VehicleRepository;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -19,18 +21,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class BookingService {
 
     private final BookingRepository bookingRepository;
-
     private final DriverRepository driverRepository;
-
-    private final VehicleRepository vehicleRepository;
-
-    private ExternalApiService externalApiService;
-
+    private final LocationUpdateRepository locationUpdateRepository;
 
     public List<Booking> getAllBookings() {
         List<Booking> bookings = bookingRepository.findAll();
@@ -87,6 +85,7 @@ public class BookingService {
     @Transactional
     public void deleteBooking(Long id) {
         Booking booking = getBookingById(id);
+        locationUpdateRepository.deleteByBookingId(id);
         bookingRepository.delete(booking);
     }
 
@@ -139,29 +138,27 @@ public class BookingService {
         return bookingRepository.save(booking);
     }
 
-//    @Transactional
-//    public Booking syncWithApi(Long bookingId) {
-//        Booking booking = getBookingById(bookingId);
-//
-//        if (booking.getDriver() == null ) {
-//            throw new IllegalStateException("Booking must have a driver and vehicle assigned before syncing!");
-//        }
-//
-//        if (booking.getDriver().getVehicles() == null) {
-//            throw new IllegalStateException("Driver must have a vehicle assigned before syncing booking");
-//        }
-//
-////        externalApiService.sendBookingsToApi(booking);
-//        booking.setSyncedWithApi(true);
-//        return bookingRepository.save(booking);
-//    }
-
     @Transactional
     public void deleteMultipleBookings(List<Long> ids) {
         if (ids == null || ids.isEmpty()) {
             throw new IllegalArgumentException("No booking IDs provided");
         }
+
+        log.info("Starting bulk delete for {} bookings", ids.size());
+
+        // Delete location updates for all bookings first
+        for (Long bookingId : ids) {
+            try {
+                int deletedLocationUpdates = locationUpdateRepository.deleteByBookingId(bookingId);
+                log.debug("Deleted {} location updates for booking {}", deletedLocationUpdates, bookingId);
+            } catch (Exception e) {
+                log.warn("Error deleting location updates for booking {}: {}", bookingId, e.getMessage());
+            }
+        }
+
+        // Now delete the bookings
         bookingRepository.deleteAllByIdIn(ids);
+        log.info("Successfully deleted {} bookings", ids.size());
     }
 
     public List<Booking> getBookingsForDateRange(LocalDateTime start, LocalDateTime end) {
