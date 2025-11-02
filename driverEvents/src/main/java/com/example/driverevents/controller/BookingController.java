@@ -15,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Arrays;
@@ -112,25 +113,58 @@ public class BookingController {
     }
 
     @PutMapping("/actions/bulk-sync")
-    public ResponseEntity<List<Booking>> bulkSync(@RequestBody List<Long> ids) {
+    public ResponseEntity<Map<String, Object>> bulkSync(@RequestBody List<Long> ids) {
         log.info("Starting bulk sync for {} bookings", ids.size());
-        List<Booking> syncedBookings = bookingSyncService.syncMultipleBookings(ids);
-        log.info("Successfully synced {}/{} bookings", syncedBookings.size(), ids.size());
 
-        Map<String, Object> response = new java.util.HashMap<>();
-        response.put("synced", syncedBookings);
-        response.put("syncedCount", syncedBookings.size());
-        response.put("totalCount", ids.size());
-        response.put("failedCount", ids.size() - syncedBookings.size());
+        try {
+            List<Booking> syncedBookings = bookingSyncService.syncMultipleBookings(ids);
 
-        if (syncedBookings.size() < ids.size()) {
-            response.put("message", String.format("Synced %d of %d bookings. Check logs for failures.",
-                    syncedBookings.size(), ids.size()));
-        } else {
-            response.put("message", "All bookings synced successfully");
+            Map<String, Object> response = new HashMap<>();
+            response.put("synced", syncedBookings);
+            response.put("syncedCount", syncedBookings.size());
+            response.put("totalCount", ids.size());
+            response.put("failedCount", ids.size() - syncedBookings.size());
+
+            if (syncedBookings.size() < ids.size()) {
+                response.put("message", String.format(
+                        "Synced %d of %d bookings. Check logs for failures.",
+                        syncedBookings.size(), ids.size()
+                ));
+            } else {
+                response.put("message", "All bookings synced successfully");
+            }
+
+            log.info("Successfully synced {}/{} bookings", syncedBookings.size(), ids.size());
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            log.error("Bulk sync failed with exception: {}", e.getMessage(), e);
+
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Bulk sync failed: " + e.getMessage());
+            errorResponse.put("syncedCount", 0);
+            errorResponse.put("totalCount", ids.size());
+            errorResponse.put("failedCount", ids.size());
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
-
-        return ResponseEntity.ok(syncedBookings);
+//        List<Booking> syncedBookings = bookingSyncService.syncMultipleBookings(ids);
+//        log.info("Successfully synced {}/{} bookings", syncedBookings.size(), ids.size());
+//
+//        Map<String, Object> response = new java.util.HashMap<>();
+//        response.put("synced", syncedBookings);
+//        response.put("syncedCount", syncedBookings.size());
+//        response.put("totalCount", ids.size());
+//        response.put("failedCount", ids.size() - syncedBookings.size());
+//
+//        if (syncedBookings.size() < ids.size()) {
+//            response.put("message", String.format("Synced %d of %d bookings. Check logs for failures.",
+//                    syncedBookings.size(), ids.size()));
+//        } else {
+//            response.put("message", "All bookings synced successfully");
+//        }
+//
+//        return ResponseEntity.ok(syncedBookings);
     }
 
     @PutMapping("/{id}/sync")

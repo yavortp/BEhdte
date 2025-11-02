@@ -29,10 +29,4 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     Optional<Booking> findActiveBookingForDriver(@Param("driverId") Long driverId,
                                                  @Param("timestamp") LocalDateTime timestamp);
 
-//    @Query(value = "SELECT * FROM bookings b WHERE " +
-//            "b.start_time BETWEEN :now AND :now + interval '30 minutes' " +
-//            "OR :now BETWEEN b.start_time - interval '30 minutes' AND b.start_time + interval '30 minutes'",
-//            nativeQuery = true)
-//    List<Booking> findBookingsForLocationUpdates(@Param("now") LocalDateTime now);
-
 }
