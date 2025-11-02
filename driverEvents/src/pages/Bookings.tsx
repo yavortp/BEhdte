@@ -513,12 +513,16 @@ const Bookings: React.FC = () => {
                                         <Calendar className="h-4 w-4 mr-2 text-gray-400" />
                                         <div>
                                             <div>{booking.bookingDate
-                                                ? format(
-                                                    booking.bookingDate instanceof Date
-                                                        ? booking.bookingDate
-                                                        : new Date(booking.bookingDate),
-                                                    'dd MMM yyyy'
-                                                )
+                                                ? (() => {
+                                                    try {
+                                                        const date = booking.bookingDate instanceof Date
+                                                            ? booking.bookingDate
+                                                            : parse(booking.bookingDate as string, 'dd.MM.yyyy', new Date());
+                                                        return isValid(date) ? format(date, 'dd MMM yyyy') : '—';
+                                                    } catch {
+                                                        return '—';
+                                                    }
+                                                })()
                                                 : '—'}</div>
                                             <div className="text-gray-500">
                                                 {booking.startTime
