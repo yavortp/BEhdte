@@ -17,8 +17,6 @@ public interface LocationUpdateRepository extends JpaRepository<LocationUpdateFr
     @Query("SELECT lu FROM LocationUpdateFromDrivers lu ORDER BY lu.timestamp")
     List<LocationUpdateFromDrivers> findUnsentUpdatesByBooking(Long bookingId);
 
-    int deleteByBookingId(Long bookingId);
-
     List<LocationUpdateFromDrivers> findBySentToApiIsNullOrderByTimestampAsc();
 
 }
