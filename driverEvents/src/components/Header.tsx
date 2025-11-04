@@ -26,6 +26,17 @@ const Header: React.FC = () => {
                             <span>Upload</span>
                         </Link>
 
+                        <button
+                            onClick={() => {
+                                localStorage.clear();
+                                sessionStorage.clear();
+                                window.location.href = '/login';
+                            }}
+                            className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
+                        >
+                            Logout
+                        </button>
+
                   {/*      <button className="p-1 rounded-full text-gray-500 hover:text-gray-600 hover:bg-gray-100 focus:outline-none">*/}
                   {/*          <Bell size={20} />*/}
                   {/*      </button>*/}
