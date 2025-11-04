@@ -21,7 +21,6 @@ public class LocationsController {
     public ResponseEntity<?> receiveLocation(@RequestHeader("Authorization") String authHeader,
                                              @RequestBody LocationUpdateFromDrivers payload) {
         String token = authHeader.replace("Bearer ", "");
-        System.out.println("- location controller - PAYLOAD: " + payload);
 
         try {
             FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(token);

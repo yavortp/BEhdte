@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -13,21 +14,25 @@ import java.util.List;
 public interface SentLocationsToExternalApiRepository  extends JpaRepository<LocationUpdateToDb, Long> {
 
     @Modifying
+    @Transactional
     @Query("UPDATE LocationUpdateFromDrivers l SET l.sentToApi = true WHERE l.id = :id")
     void markAsSent(@Param("id") Long id);
 
     // batch mark multiple locations
     @Modifying
+    @Transactional
     @Query("UPDATE LocationUpdateFromDrivers l SET l.sentToApi = true WHERE l.id IN :ids")
     void markAllAsSent(@Param("ids") List<Long> ids);
 
     // Delete location updates by booking ID (for single booking deletion)
     @Modifying
+    @Transactional
     @Query("DELETE FROM LocationUpdateToDb lu WHERE lu.bookingId = :bookingId")
     int deleteByBookingId(@Param("bookingId") Long bookingId);
 
     // Delete location updates by multiple booking IDs (for bulk deletion - more efficient)
     @Modifying
+    @Transactional
     @Query("DELETE FROM LocationUpdateToDb lu WHERE lu.bookingId IN :bookingIds")
     int deleteByBookingIdIn(@Param("bookingIds") List<Long> bookingIds);
 

@@ -160,10 +160,10 @@ const Bookings: React.FC = () => {
                     filtered = filtered.filter(booking => !booking.syncedWithApi);
                     break;
                 case 'assigned':
-                    filtered = filtered.filter(booking => booking.driverId && booking.vehicleId);
+                    filtered = filtered.filter(booking => booking.driver && booking.vehicle);
                     break;
                 case 'unassigned':
-                    filtered = filtered.filter(booking => !booking.driverId || !booking.vehicleId);
+                    filtered = filtered.filter(booking => !booking.driver || !booking.vehicle);
                     break;
             }
         }

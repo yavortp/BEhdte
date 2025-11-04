@@ -60,7 +60,7 @@ public class FileProcessingService {
                     booking.setStartLocation(getCellValueAsString(row.getCell(columnIndexMap.get("from"))).toUpperCase().trim());
                     booking.setDestination(getCellValueAsString(row.getCell(columnIndexMap.get("destination"))).toUpperCase().trim());
                     booking.setArrivalOrDeparture(getCellValueAsString(row.getCell(columnIndexMap.get("type"))).toUpperCase().trim());
-                    booking.setPRVorShuttle(getCellValueAsString(row.getCell(columnIndexMap.get("transp"))).trim());
+                    booking.setPRVorShuttle(getCellValueAsString(row.getCell(columnIndexMap.get("transp"))).toUpperCase().trim());
                     Cell dateCell = row.getCell(columnIndexMap.get("date"));
                     Cell timeCell = row.getCell(columnIndexMap.get("start time"));
                     DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
