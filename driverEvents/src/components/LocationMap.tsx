@@ -127,7 +127,6 @@ const LocationMap: React.FC = () => {
 
         // Cleanup on unmount
         return () => {
-            console.log('🧹 Cleaning up location tracking...');
             registeredDrivers.forEach((email) => {
                 locationService.unregisterCallback(email);
             });
