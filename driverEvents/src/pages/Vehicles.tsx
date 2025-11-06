@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-    Plus, Search, Filter, Truck, CheckCircle, AlertTriangle, Edit, Trash2, Save, X
+    Plus, Search, Filter, Truck, Edit, Trash2, Save, X
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { useForm } from 'react-hook-form';
@@ -32,7 +32,7 @@ const Vehicles: React.FC = () => {
     const [typeFilter, setTypeFilter] = useState<string>('all');
     const [editingId, setEditingId] = useState<string | null>(null);
     const [showAddForm, setShowAddForm] = useState<boolean>(false);
-    const [vehicleTypeFilter, setVehicleTypeFilter] = useState('');
+    const [regFilter, setRegFilter] = useState<string>('');
 
 
     const { register, handleSubmit, reset, formState: { errors} } = useForm<VehicleFormData>();
@@ -87,12 +87,10 @@ const Vehicles: React.FC = () => {
         }
 
         // Type filter
-        if (typeFilter.trim() !== '' && typeFilter !== 'all') {
-            const keywords = typeFilter.toLowerCase().split(' ');
-            filtered = filtered.filter(vehicle => {
-                const desc = vehicle.description ?? '';
-                return keywords.every(kw => desc.toLowerCase().includes(kw));
-            });
+        if (regFilter) {
+            filtered = filtered.filter(vehicle =>
+                vehicle.registrationNumber.toLowerCase().includes(regFilter.toLowerCase())
+            );
         }
 
         setFilteredVehicles(filtered);
@@ -178,27 +176,6 @@ const Vehicles: React.FC = () => {
                 toast.error('Failed to delete vehicle');
                 console.error(error);
             }
-        }
-    };
-
-    const getStatusBadge = (status: string) => {
-        switch (status) {
-            case 'available':
-                return (
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-            <CheckCircle className="h-3 w-3 mr-1" />
-            Available
-          </span>
-                );
-            case 'in-use':
-                return (
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-            <AlertTriangle className="h-3 w-3 mr-1" />
-            In Use
-          </span>
-                );
-            default:
-                return null;
         }
     };
 
@@ -393,7 +370,7 @@ const Vehicles: React.FC = () => {
                                 id="search"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                placeholder="Search vehicles..."
+                                placeholder="Search vehicles by model"
                                 className="pl-10 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                             />
                         </div>
@@ -417,13 +394,13 @@ const Vehicles: React.FC = () => {
 
                     <div>
                         <label htmlFor="type-filter" className="block text-sm font-medium text-gray-700 mb-1">
-                            Type
+                            Registration Number
                         </label>
                         <input
                             type="text"
-                            value={vehicleTypeFilter}
-                            onChange={(e) => setVehicleTypeFilter(e.target.value)}
-                            placeholder="Filter by type (e.g. SUV, Truck)"
+                            value={regFilter}
+                            onChange={(e) => setRegFilter(e.target.value)}
+                            placeholder="Search by reg number"
                             className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                         />
                     </div>
@@ -485,6 +462,9 @@ const Vehicles: React.FC = () => {
                                         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                                                 <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                        Reg Number
+                                                    </label>
                                                     <input
                                                         type="text"
                                                         {...register('registrationNumber', { required: 'Vehicle reg number is required' })}
@@ -496,6 +476,9 @@ const Vehicles: React.FC = () => {
                                                     )}
                                                 </div>
                                                 <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                        Vehicle Model
+                                                    </label>
                                                     <input
                                                         type="text"
                                                         {...register('model', { required: 'Model is required' })}
@@ -507,6 +490,9 @@ const Vehicles: React.FC = () => {
                                                     )}
                                                 </div>
                                                 <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                        Vehicle Type
+                                                    </label>
                                                     <input
                                                         type="text"
                                                         id="type"
@@ -516,6 +502,9 @@ const Vehicles: React.FC = () => {
                                                     />
                                                 </div>
                                                 <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                        Capacity
+                                                    </label>
                                                     <input
                                                         type="number"
                                                         min="1"
@@ -527,7 +516,7 @@ const Vehicles: React.FC = () => {
                                                         <p className="mt-1 text-sm text-red-600">{errors.capacity.message}</p>
                                                     )}
                                                 </div>
-                                                <div>Status: {getStatusBadge(vehicle.status)}</div>
+                                                {/*<div>Status: {getStatusBadge(vehicle.status)}</div>*/}
                                             </div>
                                             <div className="flex justify-end space-x-2">
                                                 <button

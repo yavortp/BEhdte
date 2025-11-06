@@ -66,13 +66,11 @@ const LocationMap: React.FC = () => {
     useEffect(() => {
         let isMounted = true;
 
-        console.log('📋 Fetching drivers...');
-
         fetch("/api/drivers")
             .then((res) => res.json())
             .then((data) => {
                 if (isMounted) {
-                    console.log('✅ Drivers loaded:', data.length, 'drivers');
+                    // console.log('✅ Drivers loaded:', data.length, 'drivers');
                     setDrivers(data);
                 }
             })
@@ -86,7 +84,7 @@ const LocationMap: React.FC = () => {
     }, []);
 
     const handleLocationUpdate = useCallback((email: string, update: LocationUpdate) => {
-        console.log(`📍 Location update received for ${email}:`, update);
+        // console.log(`📍 Location update received for ${email}:`, update);
 
         setLocations((prev) => {
             const existing = prev[email];
@@ -97,7 +95,7 @@ const LocationMap: React.FC = () => {
                 console.log(`⏭️ Skipping duplicate for ${email}`);
                 return prev;
             }
-            console.log(`✅ Setting location for ${email}`);
+            // console.log(`✅ Setting location for ${email}`);
             return { ...prev, [email]: update };
         });
     }, []);
@@ -108,7 +106,6 @@ const LocationMap: React.FC = () => {
             return;
         }
 
-        console.log('🔌 Initializing location tracking...');
         isInitializedRef.current = true;
 
         // Connect ONCE
@@ -123,7 +120,7 @@ const LocationMap: React.FC = () => {
             registeredDrivers.push(driver.email);
         });
 
-        console.log(`✅ Registered callbacks for ${drivers.length} drivers`);
+        // console.log(`✅ Registered callbacks for ${drivers.length} drivers`);
 
         // Cleanup on unmount
         return () => {
