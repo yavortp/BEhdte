@@ -156,7 +156,11 @@ const Drivers: React.FC = () => {
                 toast.success('Driver updated successfully');
                 setEditingId(null);
             } else {
-                await createDriver(data as Driver);
+                const createPayload = {
+                    ...data,
+                    ...(data.vehicleId ? { vehicles: { id: data.vehicleId } } : {}),
+                };
+                await createDriver(createPayload as Driver);
                 toast.success('Driver added successfully');
                 setShowAddForm(false);
             }
@@ -435,6 +439,9 @@ const Drivers: React.FC = () => {
                                         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                                                 <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                        Name
+                                                    </label>
                                                     <input
                                                         type="text"
                                                         {...register('name', { required: 'Name is required' })}
@@ -446,6 +453,9 @@ const Drivers: React.FC = () => {
                                                     )}
                                                 </div>
                                                 <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                        Email
+                                                    </label>
                                                     <input
                                                         type="email"
                                                         {...register('email', { required: 'Email is required' })}
@@ -457,6 +467,9 @@ const Drivers: React.FC = () => {
                                                     )}
                                                 </div>
                                                 <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                        Phone Number
+                                                    </label>
                                                     <input
                                                         type="tel"
                                                         {...register('phone', { required: 'Phone is required' })}
@@ -469,6 +482,9 @@ const Drivers: React.FC = () => {
                                                 </div>
 
                                                 <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                        Vehicle
+                                                    </label>
                                                     <select
                                                         {...register('vehicleId')}
                                                         className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"

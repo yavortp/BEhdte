@@ -228,7 +228,7 @@ const Bookings: React.FC = () => {
             }
 
             const result = await response.json();
-            console.log('Bulk sync result:', result);
+            // console.log('Bulk sync result:', result);
 
             if (result.failedCount > 0) {
                 toast.warning(
