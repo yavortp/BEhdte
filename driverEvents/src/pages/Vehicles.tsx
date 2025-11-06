@@ -463,20 +463,6 @@ const Vehicles: React.FC = () => {
                                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                                                 <div>
                                                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                        Reg Number
-                                                    </label>
-                                                    <input
-                                                        type="text"
-                                                        {...register('registrationNumber', { required: 'Vehicle reg number is required' })}
-                                                        className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                                                        placeholder="Vehicle Number"
-                                                    />
-                                                    {errors.registrationNumber && (
-                                                        <p className="mt-1 text-sm text-red-600">{errors.registrationNumber.message}</p>
-                                                    )}
-                                                </div>
-                                                <div>
-                                                    <label className="block text-sm font-medium text-gray-700 mb-1">
                                                         Vehicle Model
                                                     </label>
                                                     <input
@@ -500,6 +486,20 @@ const Vehicles: React.FC = () => {
                                                         placeholder="Enter vehicle type"
                                                         className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                                                     />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                        Reg Number
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        {...register('registrationNumber', { required: 'Vehicle reg number is required' })}
+                                                        className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                                        placeholder="Vehicle Number"
+                                                    />
+                                                    {errors.registrationNumber && (
+                                                        <p className="mt-1 text-sm text-red-600">{errors.registrationNumber.message}</p>
+                                                    )}
                                                 </div>
                                                 <div>
                                                     <label className="block text-sm font-medium text-gray-700 mb-1">

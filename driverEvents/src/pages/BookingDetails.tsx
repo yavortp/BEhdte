@@ -391,6 +391,7 @@ const BookingDetails: React.FC = () => {
                                         <input
                                             type="text"
                                             id="destination"
+                                            placeholder="UPPER CASE ONLY"
                                             {...register('destination', { required: 'Destination is required' })}
                                             className="border border-gray-300 rounded-md shadow-sm w-full px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
 
