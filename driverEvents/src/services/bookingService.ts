@@ -65,7 +65,7 @@ export const updateBooking = async (id: string, bookingData: {
     id: string;
     bookingNumber: string;
     startTime: string | null;
-    bookingDate: string;
+    bookingDate: string | Date;
     destination: string;
     driverId?: number | null;
     driverName: string | undefined;

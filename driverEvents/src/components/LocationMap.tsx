@@ -121,7 +121,6 @@ const LocationMap: React.FC = () => {
         });
 
         // console.log(`✅ Registered callbacks for ${drivers.length} drivers`);
-
         // Cleanup on unmount
         return () => {
             registeredDrivers.forEach((email) => {

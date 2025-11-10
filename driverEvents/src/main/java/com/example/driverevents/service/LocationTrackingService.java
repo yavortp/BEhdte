@@ -68,8 +68,8 @@ public class LocationTrackingService {
         Double longitude = location.getLongitude();
         LocalDateTime timestamp = location.getTimestamp();
 
-        log.debug("Processing location - Driver: {}, Lat: {}, Lon: {}, Time: {}",
-                driverEmail, latitude, longitude, timestamp);
+//        log.debug("Processing location - Driver: {}, Lat: {}, Lon: {}, Time: {}",
+//                driverEmail, latitude, longitude, timestamp);
 
         Driver driver = driverRepository.findByEmail(driverEmail);
         if (driver == null) {
@@ -107,7 +107,7 @@ public class LocationTrackingService {
     }
 
     private void sendToWebSocket(String driverEmail, Double latitude, Double longitude, LocalDateTime timestamp) {
-        log.info("🔔 ATTEMPTING to send location to WebSocket for driver: {}", driverEmail);
+//        log.info("🔔 ATTEMPTING to send location to WebSocket for driver: {}", driverEmail);
         try {
             Map<String, Object> locationData = new HashMap<>();
             locationData.put("email", driverEmail);
