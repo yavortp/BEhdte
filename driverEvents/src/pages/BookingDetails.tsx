@@ -78,7 +78,8 @@ const BookingDetails: React.FC = () => {
                 reset({
                     destination: bookingData.destination,
                     startTime: normalizeBookingTime(bookingData.startTime),
-                    bookingDate: normalizeBookingDate(bookingData.bookingDate),
+                    bookingDate: typeof bookingData.bookingDate === 'string'
+                    ? normalizeBookingDate(bookingData.bookingDate) : bookingData.bookingDate,
                     driverId: bookingData.driverId || 'error',
                     vehicleId: bookingData.vehicleId || '',
                     notes: bookingData.notes || '',
@@ -105,7 +106,8 @@ const BookingDetails: React.FC = () => {
             reset({
                 destination: booking.destination,
                 startTime: normalizeBookingTime(booking.startTime),
-                bookingDate: normalizeBookingDate(booking.bookingDate),
+                bookingDate: typeof booking.bookingDate === 'string'
+                    ? normalizeBookingDate(booking.bookingDate) : booking.bookingDate,
                 driverId: booking.driverId || '',
                 vehicleId: booking.vehicleId || '',
                 notes: booking.notes || '',
@@ -694,7 +696,7 @@ const BookingDetails: React.FC = () => {
                         </h3>
                     </div>
                     <div className="px-4 py-5 sm:p-6">
-                        <LocationMap driverEmail={booking.driverName} />
+                        <LocationMap driverEmail={booking.driver?.email} />
                     </div>
                 </div>
             )}
