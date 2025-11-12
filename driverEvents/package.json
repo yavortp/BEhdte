@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && mkdir -p src/main/resources/static && cp -r dist/* src/main/resources/static/",
     "lint": "eslint .",
     "preview": "vite preview",
     "start": "react-scripts start"
