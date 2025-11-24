@@ -53,7 +53,7 @@ const FileUpload: React.FC = () => {
                     const workbook = read(new Uint8Array(buffer), { type: "array" });
                     const sheetName = workbook.SheetNames[0];
                     const worksheet = workbook.Sheets[sheetName];
-                    const jsonData = utils.sheet_to_json(worksheet, { range: "A1:R20" });
+                    const jsonData = utils.sheet_to_json(worksheet, { range: "A1:R200" });
                     resolve(jsonData);
                 } catch (err) {
                     reject(new Error("Excel parsing failed"));

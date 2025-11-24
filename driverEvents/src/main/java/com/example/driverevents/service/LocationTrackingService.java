@@ -68,9 +68,6 @@ public class LocationTrackingService {
         Double longitude = location.getLongitude();
         LocalDateTime timestamp = location.getTimestamp();
 
-//        log.debug("Processing location - Driver: {}, Lat: {}, Lon: {}, Time: {}",
-//                driverEmail, latitude, longitude, timestamp);
-
         Driver driver = driverRepository.findByEmail(driverEmail);
         if (driver == null) {
             log.warn("No driver found for email: {}", driverEmail);

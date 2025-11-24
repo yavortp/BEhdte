@@ -174,6 +174,7 @@ const Bookings: React.FC = () => {
             const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
             const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
             const weekFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+            const dayAfterTomorrow = new Date(tomorrow.getTime() + 24 * 60 * 60 * 1000);
 
             switch (dateFilter) {
                 case 'today':
@@ -181,6 +182,13 @@ const Bookings: React.FC = () => {
                         const bookingDate = getBookingDate(booking);
                         if (!bookingDate) return false;
                         return bookingDate >= today && bookingDate < tomorrow;
+                    });
+                    break;
+                case 'tomorrow':
+                    filtered = filtered.filter(booking => {
+                        const bookingDate = getBookingDate(booking);
+                        if (!bookingDate) return false;
+                        return bookingDate >= tomorrow && bookingDate < dayAfterTomorrow;
                     });
                     break;
                 case 'upcoming':
@@ -388,6 +396,7 @@ const Bookings: React.FC = () => {
                         >
                             <option value="all">All Dates</option>
                             <option value="today">Today</option>
+                            <option value="tomorrow">Tomorrow</option>
                             <option value="upcoming">Upcoming</option>
                             <option value="this-week">This Week</option>
                             <option value="past">Past</option>
