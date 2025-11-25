@@ -26,9 +26,8 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
         AND :timestamp BETWEEN 
             (TO_DATE(b.booking_date, 'DD.MM.YYYY') + b.start_time - interval '30 minutes') AND
             (TO_DATE(b.booking_date, 'DD.MM.YYYY') + b.start_time + (d.duration_minutes || ' minutes')::interval)
-        LIMIT 1
         """, nativeQuery = true)
-    Optional<Booking> findActiveBookingForDriver(@Param("driverId") Long driverId,
+    List<Booking> findActiveBookingForDriver(@Param("driverId") Long driverId,
                                                  @Param("timestamp") LocalDateTime timestamp);
 
 }
