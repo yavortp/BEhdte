@@ -77,23 +77,25 @@ public class LocationTrackingService {
         }
 
         // find active booking for this driver
-        Booking activeBooking = bookingRepository.findActiveBookingForDriver(driver.getId(), timestamp).orElse(null);
+        List<Booking> activeBookings = bookingRepository.findActiveBookingForDriver(driver.getId(), timestamp);
 
         sendToWebSocket(driverEmail, latitude, longitude, timestamp);
 
         // If there is an active booking, send to external API
-        if (activeBooking != null) {
-            try {
-                log.info("Active booking found: {}. Sending location to external API",
-                        activeBooking.getBookingNumber());
-                externalApiService.sendLocationUpdate(activeBooking, location);
-                location.setSentToApi(true);
-            } catch (Exception e) {
-                log.error("Failed to send location update to external API for booking {}: {}",
-                        activeBooking.getBookingNumber(), e.getMessage(), e);
-                // Don't mark as sent if it failed
-                location.setSentToApi(false);
+        if (!activeBookings.isEmpty()) {
+            for (Booking activeBooking : activeBookings) {
+                try {
+                    log.info("Active booking found: {}. Sending location to external API",
+                            activeBooking.getBookingNumber());
+                    externalApiService.sendLocationUpdate(activeBooking, location);
+                } catch (Exception e) {
+                    log.error("Failed to send location update to external API for booking {}: {}",
+                            activeBooking.getBookingNumber(), e.getMessage(), e);
+                    // Don't mark as sent if it failed
+                    location.setSentToApi(false);
+                }
             }
+            location.setSentToApi(true);
         } else {
             log.debug("No active booking found for driver: {}", driverEmail);
             location.setSentToApi(true);
