@@ -84,15 +84,18 @@ public class LocationTrackingService {
         // If there is an active booking, send to external API
         if (!activeBookings.isEmpty()) {
             for (Booking activeBooking : activeBookings) {
-                try {
-                    log.info("Active booking found: {}. Sending location to external API",
-                            activeBooking.getBookingNumber());
-                    externalApiService.sendLocationUpdate(activeBooking, location);
-                } catch (Exception e) {
-                    log.error("Failed to send location update to external API for booking {}: {}",
-                            activeBooking.getBookingNumber(), e.getMessage(), e);
-                    // Don't mark as sent if it failed
-                    location.setSentToApi(false);
+                if (activeBooking.getSyncedWithApi() == true) {
+                    try {
+                        log.info("Found {} ACTIVE bookings for {}", activeBookings.size(), driverEmail);
+                        log.info("Active booking found: {}. Sending location to external API",
+                                activeBooking.getBookingNumber());
+                        externalApiService.sendLocationUpdate(activeBooking, location);
+                    } catch (Exception e) {
+                        log.error("Failed to send location update to external API for booking {}: {}",
+                                activeBooking.getBookingNumber(), e.getMessage(), e);
+                        // Don't mark as sent if it failed
+                        location.setSentToApi(false);
+                    }
                 }
             }
             location.setSentToApi(true);
@@ -116,9 +119,9 @@ public class LocationTrackingService {
 
             String topic = "/topic/location";
 
-            log.info("📤 About to call websocket.convertAndSend - Topic: {}, Data: {}", topic, locationData);
+//            log.info("📤 About to call websocket.convertAndSend - Topic: {}, Data: {}", topic, locationData);
             websocket.convertAndSend(topic, locationData);
-            log.info("✅ SUCCESSFULLY sent location to WebSocket topic: {} - Driver: {}", topic, driverEmail);
+            log.info("✅ SENT location - Driver: {}", driverEmail);
 
         } catch (Exception e) {
             log.error("Failed to send location to WebSocket for driver {}: {}",

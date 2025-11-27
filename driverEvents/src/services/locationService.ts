@@ -65,7 +65,7 @@ class LocationService {
         }
 
         if (this.globalSubscription) {
-            console.log('Already subscribed to /topic/location');
+            // console.log('Already subscribed to /topic/location');
             return;
         }
 
@@ -94,7 +94,7 @@ class LocationService {
                 }
             });
 
-            console.log(`✅ Subscribed to ALL drivers`);
+            // console.log(`✅ Subscribed to ALL drivers`);
 
         } catch (error) {
             console.error('Failed to subscribe to location updates:', error);
