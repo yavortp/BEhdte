@@ -234,9 +234,19 @@ public class ExternalApiService {
                 .withZoneSameInstant(ZoneOffset.UTC) // Convert to UTC
                 .toOffsetDateTime();
 
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'+00:00'");
-        String formattedTimestamp = utcTimestamp.format(formatter);
+        OffsetDateTime serverTime = OffsetDateTime.now(ZoneOffset.UTC);
+        log.info("Android time: {}", location.getTimestamp());
+        log.info("Server time: {}", serverTime);
+        String formattedTimestamp;
 
+        if (utcTimestamp.isBefore(serverTime) || utcTimestamp.isAfter(serverTime)) {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'+00:00'");
+            formattedTimestamp = serverTime.format(formatter);
+        } else {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'+00:00'");
+            formattedTimestamp = utcTimestamp.format(formatter);
+        }
+        log.info("Timestamp to send to API: {}", formattedTimestamp);
         payload.put("timestamp", formattedTimestamp);
 
         // Add location coordinates
